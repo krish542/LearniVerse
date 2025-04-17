@@ -13,6 +13,8 @@ const teamRoutes = require('./routes/teamRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+//import liveSessionRoutes from './routes/liveSessionRoutes.js';
+const liveSessionRoutes = require('./routes/liveSessionRoutes');
 const PORT = process.env.PORT || 5000;
 const storage = multer.memoryStorage(); // Store files in memory (adjust as needed)
 const upload = multer({ storage: storage });
@@ -71,6 +73,7 @@ app.use('/api/team', teamRoutes);
 app.use("/api/report", reportRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/payment", paymentRoutes);
+app.use('/api/live-sessions', liveSessionRoutes);
 app.get('/api/avatar/:userId', (req, res) => {
   const { userId } = req.params;
   // In a real application, fetch this data from your database

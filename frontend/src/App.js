@@ -35,6 +35,8 @@ import SupportFeedback from './components/team/TeamDashboard/SupportFeedback';
 import TeamProfile from './components/team/TeamDashboard/TeamProfile';
 import FeedbackPage from './components/FeedbackPage';
 import ReportPage from './components/ReportPage';
+import TeacherLiveSessions from './components/teacher/TeacherLiveSessions';
+import AdminLiveSessions from './admin/components/AdminLiveSessions';
 //import TeacherList from './admin/components/TeacherList'; 
 //import Game from './components/Game/Game';
 const App = () => {
@@ -97,6 +99,8 @@ const App = () => {
         <Route path="/team/dashboard/profile" element={<TeamProfile />} />
         <Route path="/feedback" element={<FeedbackPage />} />
         <Route path="/report" element={<ReportPage />} />
+        <Route path="/teacher/live-sessions" element={<TeacherLiveSessions />} />
+<Route path="/admin/event-management" element={isAdminLoggedIn ? <AdminLiveSessions /> : <Navigate to="/admin/login" />}  />
       </Routes>
     </Router>
   );
