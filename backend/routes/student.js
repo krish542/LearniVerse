@@ -21,7 +21,7 @@ const generateOTP = () => {
 // @access  Private
 router.get('/profile', auth, async (req, res) => {
   try {
-    const student = await Student.findById(req.student.id).select('-password');
+    const student = await Student.findById(req.student.id).select('-password').where({isDeleted: false});
     res.json(student);
   } catch (err) {
     console.error(err.message);
@@ -349,11 +349,51 @@ router.post(
 // @access  Private
 router.get('/me', auth, async (req, res) => {
   try {
-      const student = await Student.findById(req.student.id).select('-password'); // Exclude password
+      const student = await Student.findById(req.student.id).select('-password').where({isDeleted: false}); // Exclude password
       res.json(student);
   } catch (err) {
       console.error(err.message);
       res.status(500).send('Server Error');
   }
 });
+// @route   DELETE api/student/profile
+// @desc    Soft delete current student's profile (with password verification)
+// @access  Private
+router.delete(
+  '/profile',
+  auth,
+  [body('password', 'Password is required').not().isEmpty()],
+  async (req, res) => {
+    console.log('DELETE /api/student/profine - req.body: ', req.body);
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { password } = req.body;
+
+    try {
+      const student = await Student.findById(req.student.id).select('+password'); // Include password for verification
+
+      if (!student) {
+        return res.status(404).json({ msg: 'Student not found' });
+      }
+
+      const isMatch = await bcrypt.compare(password, student.password);
+
+      if (!isMatch) {
+        return res.status(400).json({ msg: 'Invalid password' });
+      }
+
+      student.isDeleted = true;
+      student.deletedAt = new Date();
+      await student.save();
+
+      res.json({ msg: 'Account deleted successfully' });
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
+  }
+);
 module.exports = router;

@@ -74,6 +74,14 @@ resetPasswordExpires: {
     type: Date,
     default: null //or undefined
 },
+isDeleted: {
+  type: Boolean,
+  default: false, // By default, accounts are not deleted
+},
+deletedAt: {
+  type: Date,
+  default: null, // Initially, the deletedAt timestamp is null
+},
 }, { timestamps: true });
 
 module.exports = mongoose.model('Student', StudentSchema);
