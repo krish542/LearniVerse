@@ -7,7 +7,7 @@ const workshopSchema = new mongoose.Schema({
 
   adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: true },
   teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', required: true },
-
+  poster: {type: String}, 
   status: {
     type: String,
     enum: ['pending', 'accepted', 'rejected', 'finalized'],

@@ -179,3 +179,115 @@ exports.getTeacherWorkshops = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch workshops' });
   }
 };
+
+// Teacher accepts workshop with details
+exports.acceptWorkshopWithDetails = async (req, res) => {
+  try {
+    const { workshopId } = req.params;
+    const { suggestedSessions, suggestedDates, feedback } = req.body;
+
+    const workshop = await Workshop.findById(workshopId)
+      .populate('teacherId', 'email fullName')
+      .populate('adminId', 'email name');
+
+    if (!workshop) {
+      return res.status(404).json({ message: 'Workshop not found' });
+    }
+
+    if (workshop.teacherId._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    // Update workshop with teacher's suggestions
+    workshop.suggestedByTeacher = {
+      sessions: suggestedSessions,
+      suggestedDates: suggestedDates.map(date => new Date(date))
+    };
+    workshop.feedback = feedback;
+    workshop.status = 'accepted';
+    
+    await workshop.save();
+
+    // Send email to admin
+    await sendEmail({
+      email: workshop.adminId.email,
+      subject: `Workshop Accepted: ${workshop.title}`,
+      html: `
+        <p>Dear Admin,</p>
+        <p>Teacher ${workshop.teacherId.fullName} has accepted the workshop "${workshop.title}" with the following details:</p>
+        <p><strong>Suggested Sessions:</strong> ${suggestedSessions}</p>
+        <p><strong>Suggested Dates:</strong><br>
+          ${suggestedDates.map(d => new Date(d).toLocaleString()).join('<br>')}
+        </p>
+        <p><strong>Teacher's Notes:</strong> ${feedback || 'None'}</p>
+        <p>Please log in to finalize the workshop details.</p>
+        <p>Best regards,<br>LearniVerse Team</p>
+      `
+    });
+
+    res.status(200).json({ message: 'Workshop accepted successfully', workshop });
+  } catch (error) {
+    console.error('Accept workshop error:', error);
+    res.status(500).json({ message: 'Failed to accept workshop' });
+  }
+};
+exports.finalizeWorkshop = async (req, res) => {
+  try {
+    const { workshopId } = req.params;
+    const { totalSessions, confirmedDates, meetLinks, finalOutline } = req.body;
+    
+    // Handle file upload
+    let posterUrl = '';
+    if (req.file) {
+      posterUrl = `/uploads/posters/${req.file.filename}`;
+    }
+
+    const workshop = await Workshop.findById(workshopId)
+      .populate('teacherId', 'email fullName')
+      .populate('adminId', 'email name');
+
+    if (!workshop) {
+      return res.status(404).json({ message: 'Workshop not found' });
+    }
+
+    // Update workshop
+    workshop.final = {
+      totalSessions,
+      confirmedDates: confirmedDates.map(date => new Date(date)),
+      meetLinks: Array.isArray(meetLinks) ? meetLinks : [meetLinks]
+    };
+    workshop.finalOutline = finalOutline;
+    workshop.posterUrl = posterUrl;
+    workshop.status = 'finalized';
+    
+    await workshop.save();
+
+    // Send email to teacher
+    await sendEmail({
+      email: workshop.teacherId.email,
+      subject: `Workshop Finalized: ${workshop.title}`,
+      html: `
+        <p>Dear ${workshop.teacherId.fullName},</p>
+        <p>Your workshop "${workshop.title}" has been finalized with the following details:</p>
+        <p><strong>Sessions:</strong> ${totalSessions}</p>
+        <p><strong>Dates:</strong><br>
+          ${confirmedDates.map(d => new Date(d).toLocaleString()).join('<br>')}
+        </p>
+        <p><strong>Meet Links:</strong><br>
+          ${meetLinks.map((link, i) => `<a href="${link}">Session ${i+1}</a>`).join('<br>')}
+        </p>
+        ${posterUrl ? `<p><strong>Poster:</strong> <img src="${posterUrl}" alt="Workshop Poster" style="max-width: 100%;"></p>` : ''}
+        <p>Please review the details and prepare for your workshop.</p>
+        <p>Best regards,<br>${workshop.adminId.name}</p>
+      `
+    });
+
+    res.status(200).json({ 
+      message: 'Workshop finalized successfully', 
+      workshop 
+    });
+  } catch (error) {
+    console.error('Finalize workshop error:', error);
+    res.status(500).json({ message: 'Failed to finalize workshop' });
+  }
+};

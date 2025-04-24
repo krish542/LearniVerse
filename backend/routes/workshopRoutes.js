@@ -7,6 +7,8 @@ const {
   getAllWorkshops,
   getTeacherWorkshops,
   resendWorkshopEmail,
+  acceptWorkshopWithDetails,
+  finalizeWorkshop,
 } = require('../controllers/workshopController');
 
 // Middlewares
@@ -22,10 +24,10 @@ router.post('/send-proposal-test', async(req, res) => {
 
 // 🔒 Admin: update final workshop details (after teacher accepts)
 router.put('/update/:workshopId', verifyAdmin, updateWorkshopDetails);
-
+router.put('/accept/:workshopId', requireTeacherAuth, acceptWorkshopWithDetails);
 // 🔒 Teacher: accept/reject proposal
 router.put('/respond/:workshopId', requireTeacherAuth, respondToWorkshopProposal);
-
+router.put('/finalize/:workshopId', verifyAdmin, upload.single('poster'), finalizeWorkshop);
 // 🔒 Admin: get all workshops
 router.get('/all', getAllWorkshops);
 router.post('/resend-email/:workshopId', resendWorkshopEmail);
