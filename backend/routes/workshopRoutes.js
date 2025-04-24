@@ -6,6 +6,7 @@ const {
   updateWorkshopDetails,
   getAllWorkshops,
   getTeacherWorkshops,
+  resendWorkshopEmail,
 } = require('../controllers/workshopController');
 
 // Middlewares
@@ -27,7 +28,7 @@ router.put('/respond/:workshopId', requireTeacherAuth, respondToWorkshopProposal
 
 // 🔒 Admin: get all workshops
 router.get('/all', getAllWorkshops);
-
+router.post('/resend-email/:workshopId', resendWorkshopEmail);
 // 🔒 Teacher: get own workshops
 router.get('/my-workshops', requireTeacherAuth, getTeacherWorkshops);
 router.get('/ping', (req, res) => {

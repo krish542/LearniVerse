@@ -76,7 +76,34 @@ exports.sendWorkshopProposal = async (req, res) => {
     res.status(500).json({ message: 'Failed to send proposal' });
   }
 };
+exports.resendWorkshopEmail = async (req, res) => {
+  try {
+    const workshop = await Workshop.findById(req.params.workshopId)
+      .populate('teacherId', 'email fullName');
+    
+    if (!workshop) {
+      return res.status(404).json({ message: 'Workshop not found' });
+    }
 
+    await sendEmail({
+      email: workshop.teacherId.email,
+      subject: `Reminder: Workshop Proposal - ${workshop.title}`,
+      html: `
+        <p>Dear ${workshop.teacherId.fullName},</p>
+        <p>This is a reminder about the pending workshop proposal:</p>
+        <h3>${workshop.title}</h3>
+        <p>Please log in to your dashboard to respond to this proposal.</p>
+        <p>Proposed Dates: ${workshop.suggestedByAdmin.suggestedDates.map(d => new Date(d).toLocaleString()).join(', ')}</p>
+        <p>— LearniVerse Admin Team</p>
+      `
+    });
+
+    res.json({ message: 'Reminder email sent successfully' });
+  } catch (error) {
+    console.error('Error resending email:', error);
+    res.status(500).json({ message: 'Failed to send reminder email' });
+  }
+};
 // Teacher responds to a workshop proposal
 exports.respondToWorkshopProposal = async (req, res) => {
   try {
@@ -94,7 +121,11 @@ exports.respondToWorkshopProposal = async (req, res) => {
     await workshop.save();
 
     // Optional: notify admin via email or system log
-
+    await sendEmail({
+      email: workshop.adminId.email,
+      subject: `Workshop ${response} by teacher`,
+      html: `Teacher has ${response} the workshop "${workshop.title}"`
+    });
     res.status(200).json({ message: `Workshop ${response} successfully`, workshop });
   } catch (error) {
     console.error('Response error:', error);
@@ -137,7 +168,11 @@ exports.getAllWorkshops = async (req, res) => {
 // Get teacher's workshops (teacher use)
 exports.getTeacherWorkshops = async (req, res) => {
   try {
-    const workshops = await Workshop.find({ teacher: req.user._id });
+    console.log('Fetching workshops for teacher: ', req.user._id);
+    const workshops = await Workshop.find({ teacherId: req.user._id })
+    .populate('adminId', 'name email')
+    .populate('teacherId', 'fullName email');
+    console.log('Found workshops:', workshops);
     res.status(200).json({ workshops });
   } catch (error) {
     console.error('Fetch teacher workshops error:', error);

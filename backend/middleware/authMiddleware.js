@@ -30,14 +30,15 @@ const authMiddleware = async (req, res, next) => {
 
 const requireTeacherAuth = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    //const token = req.headers.authorization?.split(' ')[1];
+    const token = req.header('Authorization')?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ message: 'No token provided' });
 
     const decoded = await verifyToken(token);
     const teacher = await Teacher.findById(decoded.id).select('-password');
 
     if (!teacher) return res.status(403).json({ message: 'Teacher access required' });
-
+    req.token = token;
     req.user = teacher;
     next();
   } catch (err) {

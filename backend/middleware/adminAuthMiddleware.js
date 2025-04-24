@@ -22,7 +22,7 @@ const adminAuthMiddleware = async (req, res, next) => {
 };
 
 const verifyAdmin = (permission) => {
-    console.log('admin auth started');
+    //console.log('admin auth started');
     return (req, res, next) => {
         if (req.admin) {
             // Replace this with your actual permission checking logic
@@ -33,7 +33,7 @@ const verifyAdmin = (permission) => {
 
             if (adminHasPermission) {
                 next();
-                console.log('admin auth completed');
+                //console.log('admin auth completed');
             } else {
                 return res.status(403).json({ message: 'Not authorized to perform this action' });
             }

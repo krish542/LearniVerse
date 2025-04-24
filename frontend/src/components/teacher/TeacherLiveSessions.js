@@ -20,7 +20,12 @@ const TeacherLiveSessions = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [workshops, setWorkshops] = useState([]);
+  const [loading, setLoading] = useState({
+    sessions: true,
+    courses: true,
+    workshops: true
+  });
   const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -109,7 +114,7 @@ const TeacherLiveSessions = () => {
     } catch (err) {
       setError('Network error');
     } finally {
-      setLoading(false);
+      setLoading(prev => ({ ...prev, sessions: false }));
     }
   };
 
@@ -124,6 +129,70 @@ const TeacherLiveSessions = () => {
       setCourses(response.data || []);
     } catch (err) {
       console.error('Failed to fetch courses:', err);
+    } finally {
+      setLoading(prev => ({ ...prev, courses: false }));
+    }
+  };
+
+  const fetchWorkshops = async () => {
+    setLoading(prev => ({ ...prev, workshops: true }));
+    setError(null);
+    
+    try {
+      const token = localStorage.getItem('teacherToken');
+      if (!token) {
+        navigate('/teacher/login');
+        return;
+      }
+      console.log('Fetching workshops');
+      const response = await axios.get('http://localhost:5000/api/workshops/my-workshops', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log('Workshop response: ', response.data);
+      if (response.data && Array.isArray(response.data.workshops)) {
+        setWorkshops(response.data.workshops);
+      } else {
+        console.error('Unexpected response format:', response.data);
+        setWorkshops([]);
+      }
+    } catch (err) {
+      console.error('Workshop fetch error:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+      });
+      
+      if (err.response?.status === 401) {
+        // Unauthorized - token invalid or expired
+        localStorage.removeItem('teacherToken');
+        navigate('/teacher/login');
+      } else {
+        setError('Failed to load workshops. Please try again later.');
+      }
+    } finally {
+      setLoading(prev => ({ ...prev, workshops: false }));
+    }
+  };
+
+  const handleRespondToWorkshop = async (workshopId, response) => {
+    try {
+      const token = localStorage.getItem('teacherToken');
+      await axios.put(
+        `http://localhost:5000/api/workshops/respond/${workshopId}`,
+        { response },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      alert(`Workshop ${response} successfully`);
+      fetchWorkshops();
+    } catch (err) {
+      console.error('Error responding to workshop:', err);
+      alert(`Failed to ${response} workshop`);
     }
   };
 
@@ -155,9 +224,22 @@ const TeacherLiveSessions = () => {
     }
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Not specified';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   useEffect(() => {
     fetchCourses();
     fetchSessions();
+    fetchWorkshops();
   }, []);
 
   return (
@@ -184,7 +266,7 @@ const TeacherLiveSessions = () => {
         </aside>
 
         <main className={`flex-1 py-28 px-4 lg:p-8 ${isMobileMenuOpen ? 'ml-0' : 'lg:ml-64'}`}>
-          <h1 className="text-2xl md:text-3xl font-semibold mb-6 text-[#F38380]">Live Sessions</h1>
+          <h1 className="text-2xl md:text-3xl font-semibold mb-6 text-[#F38380]">Live Sessions & Workshops</h1>
 
           {/* Session Creation/Editing Form */}
           <div className="bg-white rounded shadow p-6 mb-10">
@@ -266,48 +348,145 @@ const TeacherLiveSessions = () => {
           </div>
 
           {/* Existing Sessions */}
-          {loading ? (
-            <p>Loading sessions...</p>
-          ) : error ? (
-            <p className="text-red-500">{error}</p>
-          ) : sessions.length === 0 ? (
-            <p className="text-gray-500">No live sessions scheduled.</p>
-          ) : (
-            <div className="space-y-4">
-              {sessions.map((session) => (
-                <div key={session._id} className="bg-white shadow rounded p-4">
-                  <h2 className="text-lg font-semibold">{session.title}</h2>
-                  <p><strong>Date:</strong> {new Date(session.scheduledAt).toLocaleString()}</p>
-                  <p>
-                    <strong>Course:</strong>{' '}
-                    {session.courseId?.title || 'Unknown Course'}
-                  </p>
-                  <a
-                    href={session.meetLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline mt-2 inline-block"
-                  >
-                    Join Meet
-                  </a>
-                  <div className="flex gap-2 mt-4">
-                    <button
-                      onClick={() => handleEditSession(session)}
-                      className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteSession(session._id)}
-                      className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="bg-white rounded shadow p-6 mb-10">
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Your Live Sessions</h2>
+            {loading.sessions ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800"></div>
+              </div>
+            ) : error ? (
+              <p className="text-red-500">{error}</p>
+            ) : sessions.length === 0 ? (
+              <p className="text-gray-500">No live sessions scheduled.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="py-2 px-4 border text-left">Title</th>
+                      <th className="py-2 px-4 border text-left">Date</th>
+                      <th className="py-2 px-4 border text-left">Course</th>
+                      <th className="py-2 px-4 border text-left">Link</th>
+                      <th className="py-2 px-4 border text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sessions.map((session) => (
+                      <tr key={session._id} className="hover:bg-gray-50">
+                        <td className="py-2 px-4 border">{session.title}</td>
+                        <td className="py-2 px-4 border">{formatDate(session.scheduledAt)}</td>
+                        <td className="py-2 px-4 border">
+                          {session.courseId?.title || 'Unknown Course'}
+                        </td>
+                        <td className="py-2 px-4 border">
+                          <a
+                            href={session.meetLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            Join
+                          </a>
+                        </td>
+                        <td className="py-2 px-4 border">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEditSession(session)}
+                              className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 text-sm"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSession(session._id)}
+                              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Workshop Proposals */}
+          <div className="bg-white rounded shadow p-6">
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Workshop Proposals</h2>
+            {loading.workshops ? (
+              <div className="flex justify-center py-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-800"></div>
+              </div>
+            ) : workshops.length === 0 ? (
+              <p className="text-gray-500">No workshop proposals received.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="py-2 px-4 border text-left">Title</th>
+                      <th className="py-2 px-4 border text-left">Description</th>
+                      <th className="py-2 px-4 border text-left">Proposed Dates</th>
+                      <th className="py-2 px-4 border text-left">Status</th>
+                      <th className="py-2 px-4 border text-left">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workshops.map((workshop) => (
+                      <tr key={workshop._id} className="hover:bg-gray-50">
+                        <td className="py-2 px-4 border">{workshop.title}</td>
+                        <td className="py-2 px-4 border">
+                          <p className="line-clamp-2">{workshop.description}</p>
+                        </td>
+                        <td className="py-2 px-4 border">
+                          {workshop.suggestedByAdmin?.suggestedDates?.map(formatDate).join(', ') || 'Not specified'}
+                        </td>
+                        <td className="py-2 px-4 border">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            workshop.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            workshop.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {workshop.status}
+                          </span>
+                        </td>
+                        <td className="py-2 px-4 border">
+                          {workshop.status === 'pending' && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleRespondToWorkshop(workshop._id, 'accepted')}
+                                className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm"
+                              >
+                                Accept
+                              </button>
+                              <button
+                                onClick={() => handleRespondToWorkshop(workshop._id, 'rejected')}
+                                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )}
+                          {workshop.status === 'accepted' && workshop.final?.meetLinks?.length > 0 && (
+                            <a
+                              href={workshop.final.meetLinks[0]}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline text-sm"
+                            >
+                              Join Workshop
+                            </a>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </main>
       </div>
     </div>
