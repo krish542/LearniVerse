@@ -1,3 +1,4 @@
+//backend/routes/teacherRoutes.js
 const express = require('express');
 const router = express.Router();
 const teacherController = require('../controllers/teacherController');
@@ -35,8 +36,8 @@ router.post('/teacher/courses/:courseId/lectures',
   requireTeacherAuth,
   courseController.addLectureToCourse
 );
-
-
+router.get('/teacher/getAllTeachers', teacherController.getAllTeachers);
+router.get('/teacher/:teacherId', teacherController.getTeacherById);
 /*router.post('/test-lecture-upload', (req, res) => {
   console.log("Reached /test-lecture-upload");
   res.json({ message: "Test endpoint reached" });

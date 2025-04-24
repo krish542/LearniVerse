@@ -1,3 +1,4 @@
+//backend/controllers/teacherController.js
 const Teacher = require('../models/Teacher');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -80,6 +81,17 @@ exports.getTeacherProfile = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch profile' });
   }
 };
+// Get all teachers (optionally only approved ones)
+exports.getAllTeachers = async (req, res) => {
+  try {
+    const teachers = await Teacher.find({ applicationStatus: 'accepted' }).select('_id fullName subjectsCanTeach');
+    res.json(teachers);
+    //console.log('Fetched Teachers: ', teachers);
+  } catch (error) {
+    console.error('Failed to fetch teachers:', error);
+    res.status(500).json({ message: 'Failed to fetch teachers' });
+  }
+};
 
 // Submit application
 exports.submitTeacherApplication = async (req, res) => {
@@ -156,5 +168,20 @@ exports.updateTeacherApplication = async (req, res) => {
   } catch (error) {
     console.error('Update application error:', error);
     res.status(500).json({ message: 'Failed to update application', error: error.message });
+  }
+};
+exports.getTeacherById = async (req, res) => {
+  try {
+    const teacher = await Teacher.findById(req.params.teacherId)
+      .select('fullName subjectsCanTeach email'); // Only return needed fields
+    
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+    
+    res.json(teacher);
+  } catch (error) {
+    console.error('Error fetching teacher:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };

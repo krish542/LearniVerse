@@ -15,6 +15,7 @@ const feedbackRoutes = require('./routes/feedbackRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 //import liveSessionRoutes from './routes/liveSessionRoutes.js';
 const liveSessionRoutes = require('./routes/liveSessionRoutes');
+const workshopRoutes = require('./routes/workshopRoutes');
 const PORT = process.env.PORT || 5000;
 const storage = multer.memoryStorage(); // Store files in memory (adjust as needed)
 const upload = multer({ storage: storage });
@@ -68,6 +69,7 @@ app.use('/api/student', studentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', teacherRoutes);
 app.use('/api', courseRoutes);
+app.use('/api/workshops', workshopRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/team', teamRoutes);
 app.use("/api/report", reportRoutes);

@@ -1,11 +1,12 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
-const workshopEventSchema = new mongoose.Schema({
-  title: { type: String, required: true }, // Workshop title
+const workshopSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: { type: String },
+  sampleOutline: { type: String },
+
   adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: true },
   teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', required: true },
-
-  description: { type: String }, // Optional description of the workshop
 
   status: {
     type: String,
@@ -26,10 +27,10 @@ const workshopEventSchema = new mongoose.Schema({
   final: {
     totalSessions: { type: Number },
     confirmedDates: [{ type: Date }],
-    meetLinks: [{ type: String }], // One link per confirmed session
+    meetLinks: [{ type: String }],
   },
 
-  timestamps: true
+  feedback: { type: String }, // Optional feedback (from teacher or admin)
 }, { timestamps: true });
 
-export default mongoose.model('WorkshopEvent', workshopEventSchema);
+module.exports = mongoose.model('Workshop', workshopSchema);
