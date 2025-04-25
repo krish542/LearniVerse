@@ -10,7 +10,7 @@ const {
   acceptWorkshopWithDetails,
   finalizeWorkshop,
 } = require('../controllers/workshopController');
-
+const upload = require('../middleware/uploadMiddleware');
 // Middlewares
 const { verifyAdmin } = require('../middleware/adminAuthMiddleware');
 const { requireTeacherAuth } = require('../middleware/authMiddleware');
@@ -27,7 +27,9 @@ router.put('/update/:workshopId', verifyAdmin, updateWorkshopDetails);
 router.put('/accept/:workshopId', requireTeacherAuth, acceptWorkshopWithDetails);
 // 🔒 Teacher: accept/reject proposal
 router.put('/respond/:workshopId', requireTeacherAuth, respondToWorkshopProposal);
-router.put('/finalize/:workshopId', verifyAdmin, upload.single('poster'), finalizeWorkshop);
+router.put('/finalize/:workshopId', upload.single('poster'), (req,res,next)=>{
+  console.log('upload middleware passed, proceeding to controller'); next(); 
+}, finalizeWorkshop);
 // 🔒 Admin: get all workshops
 router.get('/all', getAllWorkshops);
 router.post('/resend-email/:workshopId', resendWorkshopEmail);

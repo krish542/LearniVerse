@@ -76,7 +76,7 @@ const WorkshopsTab = () => {
     
         setWorkshops(workshopsWithTeachers);
         setPendingWorkshops(workshopsWithTeachers.filter(w => w.status === 'pending'));
-        setAcceptedWorkshops(workshopsWithTeachers.filter(w => w.status === 'accepted'));
+        setAcceptedWorkshops(workshopsWithTeachers.filter(w => w.status === 'accepted' || w.status === 'finalized'));
       } catch (err) {
         console.error('Error fetching data:', err);
       } finally {
@@ -156,9 +156,12 @@ const WorkshopsTab = () => {
   };
   const handleFinalizeWorkshop = async (workshopId) => {
     try {
+      console.log('Starting finalization');
       const formData = new FormData();
       formData.append('totalSessions', finalizeFormData.totalSessions);
       formData.append('finalOutline', finalizeFormData.finalOutline);
+      console.log("Dates to send:", finalizeFormData.confirmedDates);
+    console.log("Links to send:", finalizeFormData.meetLinks);
       finalizeFormData.confirmedDates.forEach(date => {
         formData.append('confirmedDates', date);
       });
@@ -166,9 +169,16 @@ const WorkshopsTab = () => {
         formData.append('meetLinks', link);
       });
       if (finalizeFormData.poster) {
+        console.log("Poster file:", finalizeFormData.poster.name, finalizeFormData.poster.size);
         formData.append('poster', finalizeFormData.poster);
       }
-  
+      else{
+        console.log('No poster file selected');
+      }
+      console.log("FormData contents:");
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
       const response = await axios.put(
         `http://localhost:5000/api/workshops/finalize/${workshopId}`,
         formData,
@@ -176,18 +186,34 @@ const WorkshopsTab = () => {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
-          }
+          },
+          timeout: 10000
         }
-      );
-  
+      ).catch(err => {
+        console.error('Request failed: ', err.response?err.response.data: err.message); throw err;
+      });
+      console.log("Response received:", response.data);
       alert('Workshop finalized successfully!');
       setIsFinalizeModalOpen(false);
       // Refresh workshops data
       const res = await axios.get('http://localhost:5000/api/workshops/all');
+      const updatedWorkshops = res.data.workshops.map(workshop => ({
+        ...workshop,
+        teacher: teachers.find(t => t.value === workshop.teacherId) || null
+      }));
       setWorkshops(res.data.workshops);
-      setAcceptedWorkshops(res.data.workshops.filter(w => w.status === 'accepted' || w.status === 'finalized'));
+      setPendingWorkshops(updatedWorkshops.filter(w => w.status === 'pending'));
+      setAcceptedWorkshops(updatedWorkshops.filter(w => 
+        w.status === 'accepted' || w.status === 'finalized'
+      ));
     } catch (err) {
       console.error('Error finalizing workshop:', err);
+      if (err.response) {
+      console.error('Response data:', err.response.data);
+      console.error('Response status:', err.response.status);
+      console.error('Response headers:', err.response.headers);
+    }
+
       alert('Failed to finalize workshop. Please check console for details.');
     }
   };
@@ -398,7 +424,7 @@ const WorkshopsTab = () => {
         )}
       </div>
 
-      {/* Accepted Workshops Table */}
+      {/* Accepted & Finalized Workshops Table */}
       <div className="bg-white p-4 md:p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-semibold mb-4">Accepted Workshops</h3>
         {loading ? (
@@ -412,7 +438,7 @@ const WorkshopsTab = () => {
             <table className="min-w-full bg-white text-sm">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="py-3 px-4 border text-left">Title</th>
+                  <th className="py-3 px-4 border text-left">Workshop</th>
                   <th className="py-3 px-4 border text-left">Teacher</th>
                   <th className="py-3 px-4 border text-left">Scheduled Dates</th>
                   <th className="py-3 px-4 border text-left">Meet Links</th>
@@ -422,12 +448,32 @@ const WorkshopsTab = () => {
               <tbody>
                 {acceptedWorkshops.map(workshop => (
                   <tr key={workshop._id} className="hover:bg-gray-50">
-                    <td className="py-3 px-4 border">{workshop.title}</td>
                     <td className="py-3 px-4 border">
-                      {workshop.teacher
-                        ? `${workshop.teacher.fullName}${workshop.teacher.subjectsCanTeach ? ` (${Array.isArray(workshop.teacher.subjectsCanTeach) ? workshop.teacher.subjectsCanTeach.join(', ') : workshop.teacher.subjectsCanTeach})` : ''}`
-                        : 'N/A'}
+                      <div className="flex items-center gap-3">
+                        {workshop.poster && (
+                          <div className="w-10 h-10 flex-shrink-0 border rounded overflow-hidden">
+                            <img 
+                              src={`http://localhost:5000${workshop.poster}`} 
+                              alt="Workshop poster"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.onerror = null; 
+                                e.target.src = '/default-poster.jpeg';
+                              }}
+                            />
+                          </div>
+                        )}
+                        <span>{workshop.title}</span>
+                      </div>
                     </td>
+                    <td className="py-3 px-4 border">
+    {workshop.teacherId?.fullName || 'N/A'}
+    {workshop.teacherId?.subjectsCanTeach && (
+      ` (${Array.isArray(workshop.teacherId.subjectsCanTeach) 
+        ? workshop.teacherId.subjectsCanTeach.join(', ') 
+        : workshop.teacherId.subjectsCanTeach})`
+    )}
+  </td>
                     <td className="py-3 px-4 border">
                       {workshop.final?.confirmedDates?.map(formatDate).join(', ') || 
                        workshop.suggestedByAdmin?.suggestedDates?.map(formatDate).join(', ') || 
@@ -460,6 +506,11 @@ const WorkshopsTab = () => {
     }`}>
       {workshop.status}
     </span>
+    {workshop.status === 'finalized' && workshop.poster && (
+                          <span className="text-green-500" title="Poster uploaded">
+                            
+                          </span>
+                        )}
     {workshop.status === 'accepted' && (
       <button
         onClick={() => {
@@ -758,7 +809,7 @@ const WorkshopsTab = () => {
                         });
                       }}
                       className="flex-1 p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
+                      required={index === 0}
                     />
                     <button
                       type="button"

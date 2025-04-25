@@ -1,7 +1,7 @@
 const Workshop = require('../models/Workshop');
 const Teacher = require('../models/Teacher');
 const { sendEmail } = require('../utils/email');
-
+const fs = require('fs').promises; 
 // Send workshop proposal to a teacher
 exports.sendWorkshopProposal = async (req, res) => {
   //console.log('Starting workshop proposal...');
@@ -232,6 +232,10 @@ exports.acceptWorkshopWithDetails = async (req, res) => {
   }
 };
 exports.finalizeWorkshop = async (req, res) => {
+  console.log('Request received to finalize workshop:', req.params.workshopId);
+  console.log('Request body:', req.body); // Should show text fields
+  console.log('Request file:', req.file); // Should show file info
+
   try {
     const { workshopId } = req.params;
     const { totalSessions, confirmedDates, meetLinks, finalOutline } = req.body;
@@ -239,17 +243,30 @@ exports.finalizeWorkshop = async (req, res) => {
     // Handle file upload
     let posterUrl = '';
     if (req.file) {
-      posterUrl = `/uploads/posters/${req.file.filename}`;
+      posterUrl = `/uploads/workshopPosters/${req.file.filename}`;
+      console.log('Storing the poster at: ', posterUrl);
     }
 
-    const workshop = await Workshop.findById(workshopId)
+    const workshop = await Workshop.findByIdAndUpdate(workshopId, 
+      {
+        $set: {
+          'final.totalSessions': totalSessions,
+          'final.confirmedDates': confirmedDates.map(date => new Date(date)),
+          'final.meetLinks': Array.isArray(meetLinks) ? meetLinks : [meetLinks],
+          finalOutline,
+          poster: posterUrl, // Storing to 'poster' field
+          status: 'finalized'
+      }
+    },
+    {new: true, runValidators: true}
+    )
       .populate('teacherId', 'email fullName')
       .populate('adminId', 'email name');
 
     if (!workshop) {
       return res.status(404).json({ message: 'Workshop not found' });
     }
-
+    console.log('Updated workshop:', workshop);
     // Update workshop
     workshop.final = {
       totalSessions,
@@ -257,7 +274,7 @@ exports.finalizeWorkshop = async (req, res) => {
       meetLinks: Array.isArray(meetLinks) ? meetLinks : [meetLinks]
     };
     workshop.finalOutline = finalOutline;
-    workshop.posterUrl = posterUrl;
+    workshop.poster = posterUrl;
     workshop.status = 'finalized';
     
     await workshop.save();
@@ -288,6 +305,9 @@ exports.finalizeWorkshop = async (req, res) => {
     });
   } catch (error) {
     console.error('Finalize workshop error:', error);
-    res.status(500).json({ message: 'Failed to finalize workshop' });
+    if(req.file){
+      fs.unlink(req.file.path).catch(e=>console.error('Cleanup failed: ', e));
+    }
+    res.status(500).json({ message: 'Failed to finalize workshop' , error: error.message});
   }
 };

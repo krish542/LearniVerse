@@ -25,6 +25,9 @@ const storage = multer.diskStorage({
       } else if (file.fieldname === 'notes' && req.originalUrl.includes('/lectures')) {
         uploadDir = './uploads/lectures/notes/'; // Directory for lecture notes
         fullPath = path.join(__dirname, '../', uploadDir);
+      } else if(file.fieldname === 'poster') {
+        uploadDir = './uploads/workshopPosters/';
+        fullPath = path.join(__dirname, '../', uploadDir);
       }
 
       
@@ -58,6 +61,10 @@ const fileFilter = (req, file, cb) => {
     return cb(null, false);
   }
 
+  if (file.fieldname === 'poster' && !file.mimetype.startsWith('image/')) {
+    console.log("Invalid poster type - must be an image");
+    return cb(new Error('Only image files are allowed for posters'), false);
+  }
   console.log(`Accepted file type: ${file.mimetype}`);
   cb(null, true); // ✅ Only one cb
 };
