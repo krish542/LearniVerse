@@ -6,14 +6,9 @@ const UpcomingEvents = () => {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
-    // Fetch upcoming events from the backend
     axios.get('http://localhost:5000/api/upcoming-events')
-      .then((response) => {
-        setEvents(response.data);
-      })
-      .catch((error) => {
-        console.error('Error fetching upcoming events:', error);
-      });
+      .then((response) => setEvents(response.data))
+      .catch((error) => console.error('Error fetching events:', error));
   }, []);
 
   return (
@@ -26,6 +21,9 @@ const UpcomingEvents = () => {
           {events.map((event) => (
             <EventCard key={event.id} event={event} />
           ))}
+        </div>
+        <div className="text-center mt-6">
+          <a href="/events" className="text-yellow-300 hover:underline text-lg">View All Events</a>
         </div>
       </div>
     </div>

@@ -6,14 +6,9 @@ const FeaturedCourses = () => {
   const [courses, setCourses] = useState([]);
 
   useEffect(() => {
-    // Fetch featured courses from the backend
     axios.get('http://localhost:5000/api/featured-courses')
-      .then((response) => {
-        setCourses(response.data);
-      })
-      .catch((error) => {
-        console.error('Error fetching featured courses:', error);
-      });
+      .then((response) => setCourses(response.data))
+      .catch((error) => console.error('Error fetching featured courses:', error));
   }, []);
 
   return (
@@ -24,8 +19,11 @@ const FeaturedCourses = () => {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {courses.map((course) => (
-            <CourseCard key={course.id} course={course} />
+            <CourseCard key={course._id} course={course} />
           ))}
+        </div>
+        <div className="text-center mt-6">
+          <a href="/courses" className="text-yellow-300 hover:underline text-lg">View All Courses</a>
         </div>
       </div>
     </div>

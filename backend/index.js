@@ -13,6 +13,8 @@ const teamRoutes = require('./routes/teamRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const apiRoutes = require('./routes/api')
+const eventRoutes = require('./routes/eventRoutes');
 //import liveSessionRoutes from './routes/liveSessionRoutes.js';
 const liveSessionRoutes = require('./routes/liveSessionRoutes');
 const workshopRoutes = require('./routes/workshopRoutes');
@@ -69,6 +71,8 @@ app.use('/api/student', studentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api', teacherRoutes);
 app.use('/api', courseRoutes);
+app.use('/api', apiRoutes);
+app.use('/api', eventRoutes);
 app.use('/api/workshops', workshopRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/team', teamRoutes);

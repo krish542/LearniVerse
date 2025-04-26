@@ -137,7 +137,27 @@ try {
 
 exports.getAllCourses = async (req, res) => {
   try {
-    const courses = await Course.find().populate('teacher', 'name');
+    const { category, price, sortBy, page = 1, limit = 10 } = req.query;
+    const query = {};
+    if (category) {
+      query.category = category;
+    }
+    if (price) {
+      if (price === 'free') {
+        query.price = 0;
+      } else if (price === 'paid') {
+        query.price = { $gt: 0 };
+      }
+    }
+    let sortOptions = {};
+    if (sortBy === 'priceLowToHigh') {
+      sortOptions = { price: 1 };
+    } else if (sortBy === 'priceHighToLow') {
+      sortOptions = { price: -1 };
+    } else if (sortBy === 'trending') {
+      sortOptions = { createdAt: -1 };
+    }
+    const courses = await Course.find(query).sort(sortOptions).skip((page-1)*limit).limit(Number(limit)).populate('instructor', 'fullName email');
     res.status(200).json(courses);
   } catch (err) {
     console.error('Get all courses error:', err);

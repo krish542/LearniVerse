@@ -44,7 +44,7 @@ const AdminLiveSessions = () => {
             >
               Workshops
             </button>
-            <button
+            {/*<button
               className={`px-4 py-2 rounded ${
                 activeTab === 'hackathons'
                   ? 'bg-blue-600 text-white'
@@ -53,7 +53,7 @@ const AdminLiveSessions = () => {
               onClick={() => setActiveTab('hackathons')}
             >
               Hackathons
-            </button>
+            </button>*/}
             <button
               className={`px-4 py-2 rounded ${
                 activeTab === 'competitions'

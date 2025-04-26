@@ -37,6 +37,8 @@ import FeedbackPage from './components/FeedbackPage';
 import ReportPage from './components/ReportPage';
 import TeacherLiveSessions from './components/teacher/TeacherLiveSessions';
 import AdminLiveSessions from './admin/components/AdminLiveSessions';
+import CoursesPage from './pages/CoursesPage';
+import EventsPage from './pages/EventsPage';
 //import TeacherList from './admin/components/TeacherList'; 
 //import Game from './components/Game/Game';
 const App = () => {
@@ -101,6 +103,8 @@ const App = () => {
         <Route path="/report" element={<ReportPage />} />
         <Route path="/teacher/live-sessions" element={<TeacherLiveSessions />} />
 <Route path="/admin/event-management" element={isAdminLoggedIn ? <AdminLiveSessions /> : <Navigate to="/admin/login" />}  />
+<Route path="/courses" element={<CoursesPage/>}/>
+<Route path="/events" element={<EventsPage/>}/>
       </Routes>
     </Router>
   );
