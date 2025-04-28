@@ -15,6 +15,8 @@ const feedbackRoutes = require('./routes/feedbackRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const apiRoutes = require('./routes/api')
 const eventRoutes = require('./routes/eventRoutes');
+const enrollmentRoutes = require('./routes/enrollmentRoutes');
+const cartRoutes = require('./routes/cartRoutes');
 //import liveSessionRoutes from './routes/liveSessionRoutes.js';
 const liveSessionRoutes = require('./routes/liveSessionRoutes');
 const workshopRoutes = require('./routes/workshopRoutes');
@@ -35,7 +37,8 @@ const connectedUsers = {};
 // Middleware
 app.use(cors({
   origin: '*',
-  credentials: true
+  credentials: true,
+  allowedHeaders: 'Content-Type, Authorization, x-auth-token',
 }));
 app.use(express.json({extended: false}));
 app.use((err, req, res, next) => {
@@ -48,7 +51,10 @@ app.use((err, req, res, next) => {
   }
   next();
 });
-
+app.use((req, res, next) => {
+  console.log(`Incoming request: ${req.method} ${req.url}`);
+  next();
+});
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('MongoDB Connected'))
@@ -69,10 +75,16 @@ app.use((err, req, res, next) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/student', studentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/cart', (req, res, next) => {
+  console.log('--- Global /api/cart middleware triggered ---');
+  next();
+},cartRoutes);
 app.use('/api', teacherRoutes);
 app.use('/api', courseRoutes);
 app.use('/api', apiRoutes);
 app.use('/api', eventRoutes);
+app.use('/api', enrollmentRoutes);
+
 app.use('/api/workshops', workshopRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/team', teamRoutes);

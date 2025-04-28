@@ -50,10 +50,10 @@ const EventsPage = () => {
   }, [filters]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-900">
       <Navbar />
       <div className="p-4 pt-20">
-        <h1 className="text-2xl font-bold mb-4">All Events</h1>
+        <h1 className="text-2xl font-bold mb-4 text-yellow-400">All Events</h1>
 
         {/* Filters */}
         <div className="flex flex-wrap gap-2 mb-6 items-center">
@@ -103,14 +103,14 @@ const EventsPage = () => {
         {/* Pagination */}
         <div className="mt-6 flex justify-center gap-4">
           <button
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+            className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded disabled:opacity-50"
             onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
             disabled={filters.page <= 1}
           >
             Previous
           </button>
           <button
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+            className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded"
             onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
           >
             Next

@@ -31,6 +31,7 @@ const CoursesPage = () => {
         }
       });
       setCourses(response.data);
+      setCategories(response.data.categories || []);
       setTotalCourses(response.headers['x-total-count']);
     } catch (error) {
       console.error('Error fetching courses:', error);
@@ -41,27 +42,37 @@ const CoursesPage = () => {
   // Fetch categories from the backend
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/categories'); // Assuming this endpoint exists
+      const response = await axios.get('http://localhost:5000/api/categories');
       setCategories(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      // Fallback: Extract categories from existing courses if API fails
+      if (courses.length > 0) {
+        const uniqueCategories = [...new Set(courses.map(course => course.category))];
+        setCategories(uniqueCategories);
+      }
     }
   };
 
   useEffect(() => {
-    fetchCategories();
     fetchCourses();
   }, [filters]);
+
+  useEffect(() => {
+    if (courses.length > 0) {
+      fetchCategories();
+    }
+  }, [courses]);
 
   const handlePagination = (page) => {
     setFilters({ ...filters, page });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-900">
       <Navbar />
       <div className="p-4 pt-16">
-        <h1 className="text-2xl font-bold mb-4">All Courses</h1>
+        <h1 className="text-2xl font-bold mb-4 text-yellow-400">All Courses</h1>
 
         {/* Filters Section */}
         <div className="flex mb-4 space-x-4">
@@ -102,7 +113,7 @@ const CoursesPage = () => {
         {loading ? (
           <div>Loading...</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-yellow-400">
             {courses.map((course) => (
               <CourseCard key={course._id} course={course} />
             ))}
@@ -110,7 +121,7 @@ const CoursesPage = () => {
         )}
 
         {/* Pagination */}
-        <div className="mt-4 flex justify-center space-x-4">
+        <div className="mt-4 flex justify-center space-x-4 text-yellow-400">
           <button
             onClick={() => handlePagination(filters.page - 1)}
             disabled={filters.page <= 1}

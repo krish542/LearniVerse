@@ -17,7 +17,7 @@ const EventCard = ({ event }) => {
       : `${baseURL}${poster}`
     : `${baseURL}/uploads/default-poster.jpg`;
 
-  const actionLabel = type === 'competition' ? 'View Competition' : 'Join Workshop';
+  const actionLabel = type === 'competition' ? 'View Competition' : 'View Workshop';
   const actionLink = type === 'competition'
     ? `/competitions/${id}`
     : `/workshops/${id}`;

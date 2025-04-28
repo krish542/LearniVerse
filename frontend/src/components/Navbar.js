@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-
+import { FaShoppingCart } from 'react-icons/fa';
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
@@ -74,19 +74,17 @@ const Navbar = () => {
         >
           Explore Campus
         </Link>
-        <>
-          {token ? (
-            <>
+        {token ? (
+          <>
             <Link to="/profile" className="block md:inline text-yellow-400 hover:text-white font-pixel transition duration-300">View Profile</Link>
+            <Link to="/cart" className="block md:inline text-yellow-400 hover:text-white font-pixel transition duration-300">
+              <FaShoppingCart size={20} className="inline" />
+            </Link>
             <button onClick={handleLogout} className="block md:inline text-yellow-400 hover:text-white font-pixel transition duration-300">Logout</button>
-            </>
-          ) : (
-            <>
-            <Link to="/login" className="block md:inline text-yellow-400 hover:text-white font-pixel transition duration-300">Login/Signup</Link>
-            </>
-          )
-          }
-        </>
+          </>
+        ) : (
+          <Link to="/login" className="block md:inline text-yellow-400 hover:text-white font-pixel transition duration-300">Login/Signup</Link>
+        )}
       </div>
     </nav>
   );

@@ -1,3 +1,4 @@
+//backend/middleware/auth.js (student auth)
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
@@ -12,6 +13,7 @@ const auth = (req, res, next) => {
   }
 
   try {
+    console.log('Attempting to verify token:', token); 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log('Token verified successfully. Decoded payload:', decoded);
     req.student = decoded.student;

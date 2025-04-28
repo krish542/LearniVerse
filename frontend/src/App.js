@@ -38,6 +38,8 @@ import ReportPage from './components/ReportPage';
 import TeacherLiveSessions from './components/teacher/TeacherLiveSessions';
 import AdminLiveSessions from './admin/components/AdminLiveSessions';
 import CoursesPage from './pages/CoursesPage';
+import CourseDetails from './pages/CourseDetails';
+import CartPage from './pages/CartPage';
 import EventsPage from './pages/EventsPage';
 //import TeacherList from './admin/components/TeacherList'; 
 //import Game from './components/Game/Game';
@@ -105,6 +107,8 @@ const App = () => {
 <Route path="/admin/event-management" element={isAdminLoggedIn ? <AdminLiveSessions /> : <Navigate to="/admin/login" />}  />
 <Route path="/courses" element={<CoursesPage/>}/>
 <Route path="/events" element={<EventsPage/>}/>
+<Route path="/courses/:courseId" element={<CourseDetails/>}/>
+<Route path="/cart" element={<CartPage/>}/>
       </Routes>
     </Router>
   );
