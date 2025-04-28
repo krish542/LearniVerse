@@ -8,15 +8,18 @@ const upload = require('../middleware/uploadMiddleware');
 const multer = require('multer');
 exports.addCourse = async (req, res) => {
     try {
+      let thumbnailUrl = '';
         const { title, description, price, category } = req.body;
-        const thumbnail = req.file?.path;
+        if(req.file){
+          thumbnailUrl = `/uploads/courseThumbs/${req.file.filename}`;
+        }
 
         const course = new Course({
             title,
             description,
             price,
             category,
-            thumbnail,
+            thumbnail: thumbnailUrl,
             instructor: req.user._id,
         });
 
@@ -310,4 +313,42 @@ exports.getVideoDuration = async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: 'Error fetching video duration' });
     }
+};
+exports.deleteCourse = async (req, res) => {
+  try {
+    const courseId = req.params.courseId;
+
+    // Find the course to get the thumbnail path
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    // Ensure the user deleting the course is the instructor who created it
+    if (course.instructor.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Unauthorized to delete this course' });
+    }
+
+    // Delete the course from the database
+    await Course.findByIdAndDelete(courseId);
+
+    // Delete the associated thumbnail file (if it exists and is within the uploads directory)
+    if (course.thumbnail && course.thumbnail.startsWith('/uploads/courseThumbs/')) {
+      const filePath = path.join(__dirname, '..', course.thumbnail);
+      try {
+        await fs.unlink(filePath);
+        console.log(`Deleted thumbnail: ${filePath}`);
+      } catch (err) {
+        console.error(`Error deleting thumbnail: ${filePath}`, err);
+        // We don't want to fail the course deletion if thumbnail deletion fails,
+        // so we just log the error.
+      }
+    }
+
+    res.status(200).json({ message: 'Course deleted successfully' });
+  } catch (err) {
+    console.error('Delete course error:', err);
+    res.status(500).json({ message: 'Server error while deleting course' });
+  }
 };

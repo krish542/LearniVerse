@@ -44,4 +44,5 @@ router.get('/student/courses', authMiddleware, courseController.getStudentCourse
   });*/
   //router.get('/categories', courseController.getCategories);
   
+  router.delete('/teacher/courses/:courseId', authMiddleware, courseController.deleteCourse);
 module.exports = router;

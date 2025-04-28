@@ -17,6 +17,36 @@ const TeacherCourses = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  const handleDeleteCourse = async (courseId) => {
+    const teacherToken = localStorage.getItem('teacherToken');
+    if (!teacherToken) {
+      // Handle unauthenticated case (e.g., redirect to login)
+      return;
+    }
+  
+    try {
+      const response = await fetch(`/api/teacher/courses/${courseId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${teacherToken}`,
+        },
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data.message);
+        // Update your frontend state to remove the deleted course
+        setCourses(courses.filter(course => course._id !== courseId));
+      } else {
+        const errorData = await response.json();
+        console.error('Error deleting course:', errorData.message || 'Something went wrong');
+        // Optionally display an error message to the user
+      }
+    } catch (error) {
+      console.error('Network error deleting course:', error);
+      // Optionally display an error message to the user
+    }
+  };
   useEffect(() => {
     const fetchTeacherCourses = async () => {
       const teacherToken = localStorage.getItem('teacherToken');
@@ -152,7 +182,7 @@ const TeacherCourses = () => {
                           <FontAwesomeIcon icon={faEdit} className="h-5 w-5" />
                         </Link>
                         <button
-                          onClick={() => console.log(`Delete course ${course._id}`)} // Implement delete logic later
+                          onClick={() => handleDeleteCourse(course._id)} // Implement delete logic later
                           className="text-red-600 hover:text-red-900"
                         >
                           <FontAwesomeIcon icon={faTrash} className="h-5 w-5" />
