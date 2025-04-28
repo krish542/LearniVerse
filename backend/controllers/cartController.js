@@ -11,8 +11,7 @@ exports.getCart = async (req, res) => {
       }
 
       console.log('Fetching cart for student ID:', req.student.id);
-      const cart = await Cart.findOne({ student: req.student.id });
-      //.populate('items.course', 'title price thumbnail');
+      const cart = await Cart.findOne({ student: req.student.id }).populate('items.course', 'title price thumbnail');
 
       if (!cart) {
           console.log('No cart found for student:', req.student.id);

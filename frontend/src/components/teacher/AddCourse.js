@@ -61,7 +61,7 @@ const AddCourse = () => {
     formData.append('price', isMonetized ? parseFloat(price) : 0);
 
     try {
-      const response = await fetch('/api/teacher/courses', {
+      const response = await fetch('http://localhost:5000/api/courses/add', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${teacherToken}`,
