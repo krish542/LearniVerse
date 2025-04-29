@@ -9,6 +9,7 @@ router.post('/webhook', express.raw({type: 'application/json'}), paymentControll
 // Authenticated routes
 router.use(authMiddleware);
 router.post('/checkout-session', paymentController.createCheckoutSession);
-router.get('/verify', paymentController.verifyPayment);
+router.get('/verify/:sessionId', paymentController.verifyPayment);
+router.post('/confirm', authMiddleware, paymentController.confirmPayment);
 
 module.exports = router;

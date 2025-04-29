@@ -124,3 +124,23 @@ exports.removeItem = async (req, res) => {
         res.status(500).json({ error: 'Failed to remove item' });
     }
 };
+exports.clearCart = async (req, res) => {
+    try {
+      const studentId = req.student.id;
+      
+      const cart = await Cart.findOneAndUpdate(
+        { student: studentId },
+        { $set: { items: [] } },
+        { new: true }
+      );
+  
+      res.json({
+        success: true,
+        message: 'Cart cleared',
+        cart
+      });
+    } catch (err) {
+      console.error('Error clearing cart:', err);
+      res.status(500).json({ error: 'Failed to clear cart' });
+    }
+  };

@@ -1,9 +1,36 @@
 // backend/index.js
-const express = require('express');
-const mongoose = require('mongoose');
-const path = require('path');
-const cors = require('cors');
+// Enable strict error handling
 require('dotenv').config();
+process.on('uncaughtException', err => {
+  console.error('UNCAUGHT EXCEPTION! 💥 Shutting down...', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', err => {
+  console.error('UNHANDLED REJECTION! 💥 Shutting down...', err);
+  server.close(() => process.exit(1));
+});
+
+const express = require('express');
+const app = express();
+const http = require('http');
+const server = http.createServer(app);
+const mongoose = require('mongoose');
+// MongoDB Connection
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('MongoDB Connected'))
+  .catch(err => console.log(err));
+const cors = require('cors');
+app.use(cors({
+  origin: '*',
+  credentials: true,
+  allowedHeaders: 'Content-Type, Authorization, x-auth-token',
+}));
+app.use(express.json());
+app.use(express.json({extended: false}));
+const path = require('path');
+
+const auth = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const studentRoutes = require('./routes/student');
 const teacherRoutes = require('./routes/teacherRoutes');
@@ -23,70 +50,21 @@ const workshopRoutes = require('./routes/workshopRoutes');
 const PORT = process.env.PORT || 5000;
 const storage = multer.memoryStorage(); // Store files in memory (adjust as needed)
 const upload = multer({ storage: storage });
-const http = require('http');
+
 const { Server } = require('socket.io');
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ["GET", "POST"]
-  }
-});
-const connectedUsers = {};
-// Middleware
-app.use(cors({
-  origin: '*',
-  credentials: true,
-  allowedHeaders: 'Content-Type, Authorization, x-auth-token',
-}));
-app.use(express.json({extended: false}));
-app.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError) {
-    console.error("🔥 Multer error:", err);
-    return res.status(400).json({ error: err.message });
-  } else if (err) {
-    console.error("🔥 Unknown error:", err);
-    return res.status(500).json({ error: "Something went wrong" });
-  }
-  next();
-});
-app.use((req, res, next) => {
-  console.log(`Incoming request: ${req.method} ${req.url}`);
-  next();
-});
-// MongoDB Connection
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.log(err));
+app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Routes
-app.get('/', (req, res) => {
-  res.send('LearniVerse Backend');
-});
-
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  console.error("General server error: ", err);
-  res.status(500).json({ message: 'Something broke!' });
-});
-// Other routes (recommend, featuredCourses, upcomingEvents) remain unchanged...
-
-app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', auth);
 app.use('/api/student', studentRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/cart', (req, res, next) => {
-  console.log('--- Global /api/cart middleware triggered ---');
-  next();
-},cartRoutes);
+app.use('/api/cart', cartRoutes);
 app.use('/api', teacherRoutes);
 app.use('/api', courseRoutes);
 app.use('/api', apiRoutes);
 app.use('/api', eventRoutes);
 app.use('/api', enrollmentRoutes);
-
 app.use('/api/workshops', workshopRoutes);
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/team', teamRoutes);
 app.use("/api/report", reportRoutes);
 app.use("/api/feedback", feedbackRoutes);
@@ -102,6 +80,50 @@ app.get('/api/avatar/:userId', (req, res) => {
   };
   res.json(avatarConfig);
 });
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ["GET", "POST"]
+  }
+});
+const connectedUsers = {};
+
+app.use((req, res) => {
+  res.status(404).json({ message: 'Not Found' });
+});
+app.use((err, req, res, next) => {
+  console.error('💥 Global Error:', err);
+  res.status(500).json({ 
+    message: 'Internal Server Error',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+app.use((err, req, res, next) => {
+  
+  if (err instanceof multer.MulterError) {
+    console.error("Multer error:", err);
+    return res.status(400).json({ error: err.message });
+  } else if (err) {
+    console.error("Unknown error:", err);
+    return res.status(500).json({ error: "Something went wrong" });
+  }
+  next();
+});
+
+// Routes
+app.get('/', (req, res) => {
+  res.send('LearniVerse Backend');
+});
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  console.error("General server error: ", err);
+  res.status(500).json({ message: 'Something broke!' });
+});
+// Other routes (recommend, featuredCourses, upcomingEvents) remain unchanged...
+
+
+
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running with socket.io on http://localhost:${PORT}`);
 });
@@ -154,4 +176,10 @@ io.on('connection', (socket) => {
     io.emit('remove-avatar', socket.id);
   });
 
+});
+console.log('=== ENVIRONMENT VARIABLES ===');
+console.log({
+  MONGO_URI: process.env.MONGO_URI ? '*****' : 'MISSING',
+  JWT_SECRET: process.env.JWT_SECRET ? '*****' : 'MISSING',
+  PORT: process.env.PORT
 });

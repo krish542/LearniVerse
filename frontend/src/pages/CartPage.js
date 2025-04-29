@@ -1,3 +1,4 @@
+//frontend/src/pages/CartPage.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -11,11 +12,15 @@ const CartPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [cartUpdateLoading, setCartUpdateLoading] = useState(null);
-
+    const [cartTotal, setCartTotal] = useState(0);
     useEffect(() => {
         fetchCartData();
     }, []);
-
+    useEffect(() => {
+        // Calculate total whenever cartItems change
+        const total = cartItems.reduce((sum, item) => sum + item.course.price, 0);
+        setCartTotal(total);
+    }, [cartItems]);
     const fetchCartData = async () => {
         try {
             setLoading(true);
@@ -139,7 +144,8 @@ const CartPage = () => {
         }
 
         axios.post('http://localhost:5000/api/payment/checkout-session', {
-            cartId: cartItems[0].cartId // Use the cartId from the fetched cart
+            cartId: cartItems[0].cartId, // Still using cartId
+            totalAmount: cartTotal // Send the calculated total
         }, {
             headers: { 'x-auth-token': token }
         }).then(response => {
@@ -197,6 +203,10 @@ const CartPage = () => {
                                 </div>
                             </div>
                         ))}
+                        <div className="flex justify-between items-center mb-4">
+                            <span className="font-semibold text-lg">Total:</span>
+                            <span className="text-xl">₹{cartTotal}</span>
+                        </div>
                         <button
                             onClick={handleCheckout}
                             disabled={cartItems.length === 0}

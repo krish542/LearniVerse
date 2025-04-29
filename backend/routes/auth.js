@@ -78,6 +78,10 @@ router.post(
     body('password', 'Password is required').not().isEmpty(),
   ],
   async (req, res) => {
+    console.log('Login request received:', {
+      body: { ...req.body, password: '****' }, // Never log actual passwords
+      headers: req.headers
+    });
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -86,7 +90,12 @@ router.post(
     const { username, password } = req.body;
 
     try {
-      let student = await Student.findOne({ username });
+      let student = await Student.findOne({ 
+        $or: [
+          { username },
+          { email: username } // Also try matching as email
+        ] 
+      });
 
       if (!student) {
         return res.status(400).json({ msg: 'Invalid Credentials' });
@@ -107,10 +116,15 @@ router.post(
       jwt.sign(
         payload,
         process.env.JWT_SECRET,
-        { expiresIn: '1h' },
+        { expiresIn: '5h' },
         (err, token) => {
           if (err) throw err;
-          res.json({ token });
+          res.json({ token, student: {
+            id: student.id,
+            username: student.username,
+            email: student.email
+          }
+         });
         }
       );
     } catch (err) {

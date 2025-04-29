@@ -41,6 +41,9 @@ import CoursesPage from './pages/CoursesPage';
 import CourseDetails from './pages/CourseDetails';
 import CartPage from './pages/CartPage';
 import EventsPage from './pages/EventsPage';
+import PaymentSuccessPage from './pages/PaymentSuccess';
+import PaymentCancelPage from './pages/PaymentCancelPage';
+import PaymentErrorPage from './pages/PaymentErrorPage';
 //import TeacherList from './admin/components/TeacherList'; 
 //import Game from './components/Game/Game';
 const App = () => {
@@ -109,6 +112,9 @@ const App = () => {
 <Route path="/events" element={<EventsPage/>}/>
 <Route path="/courses/:courseId" element={<CourseDetails/>}/>
 <Route path="/cart" element={<CartPage/>}/>
+<Route path="/payment-success" element={<PaymentSuccessPage />} />
+                <Route path="/payment-cancel" element={<PaymentCancelPage />} />
+                <Route path="/payment-error" element={<PaymentErrorPage />} />
       </Routes>
     </Router>
   );

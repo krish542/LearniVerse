@@ -31,15 +31,22 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      console.log('Submitting:', formData);
       const config = {
         headers: {
           'Content-Type': 'application/json',
         },
       };
-      const res = await axios.post('/api/auth/login', formData, config);
-      const token = res.data.token;
-      console.log('Login Success:', res.data);
-      localStorage.setItem('token', res.data.token);
+      console.log('Login attempt with: ', {username: formData.username});
+      const response = await axios.post('http://localhost:5000/api/auth/login', {username: formData.username, password: formData.password}, config);
+      console.log('Full Response: ', {
+        status: response.status,
+        data: response.data,
+        headers: response.headers
+      });
+      const token = response.data.token;
+      console.log('Login Success:', response.data);
+      localStorage.setItem('token', response.data.token);
       localStorage.setItem('x-auth-token', token);
       // ✅ Safe check before accessing userId
       const decoded = parseJwt(token);
@@ -51,9 +58,18 @@ const LoginForm = () => {
       console.warn('userId not found in decoded token');
     }
       navigate('/profile'); // Redirect to profile after login
-    } catch (err) {
-      console.error(err.response.data); // Handle errors properly
-      alert(err.response.data.msg || 'Login failed');
+    } catch (error) {
+      console.error('Login error details:', {
+        request: error.config,
+        response: error.response ? {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        } : undefined,
+        message: error.message
+      });
+      console.error(error.response.data); // Handle errors properly
+      alert(error.response.data.msg || 'Login failed');
     }
   };
 
