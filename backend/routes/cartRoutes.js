@@ -7,5 +7,5 @@ router.get('/',authMiddleware, cartController.getCart);
 router.post('/add', authMiddleware, cartController.addItem);
 router.post('/wishlist', authMiddleware, cartController.toggleWishlist);
 router.delete('/remove/:courseId', authMiddleware, cartController.removeItem);
-
+router.post('/clear', authMiddleware, cartController.clearCart);
 module.exports = router;

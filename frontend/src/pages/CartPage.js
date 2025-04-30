@@ -142,10 +142,9 @@ const CartPage = () => {
             alert('Your cart is empty. Add courses to proceed to checkout.');
             return;
         }
-
+        const checkoutTotal = cartItems.reduce((sum,item)=> sum + item.course.price, 0);
         axios.post('http://localhost:5000/api/payment/checkout-session', {
-            cartId: cartItems[0].cartId, // Still using cartId
-            totalAmount: cartTotal // Send the calculated total
+            cartId: cartItems[0].cartId
         }, {
             headers: { 'x-auth-token': token }
         }).then(response => {

@@ -6,7 +6,7 @@ const Enrollment = require('../models/Enrollment'); // Import Enrollment model
 
 exports.createCheckoutSession = async (req, res) => {
     try {
-        const { cartId, totalAmount } = req.body; // Receive totalAmount
+        const { cartId } = req.body; // Receive totalAmount
 
         // Get the cart with populated courses
         const cart = await Cart.findById(cartId)
@@ -15,13 +15,18 @@ exports.createCheckoutSession = async (req, res) => {
         if (!cart || cart.student.toString() !== req.student.id) {
             return res.status(403).json({ error: 'Unauthorized access to cart' });
         }
-
-        if (cart.items.length === 0) {
+        const checkoutItems = cart.items.filter(item => !item.isWishlisted);
+        
+        if (checkoutItems.length === 0) {
+            return res.status(400).json({ error: 'No items available for checkout' });
+        }
+        const cartItems = cart.items.filter(item => !item.isWishlisted);
+        if (cartItems.length === 0) {
             return res.status(400).json({ error: 'Cart is empty' });
         }
 
         // Create line items for Stripe
-        const line_items = cart.items.map(item => ({
+        const line_items = checkoutItems.map(item => ({
             price_data: {
                 currency: 'inr',
                 product_data: {
@@ -45,7 +50,7 @@ exports.createCheckoutSession = async (req, res) => {
             metadata: {
                 studentId: req.student.id,
                 cartId: cart._id.toString(),
-                courseIds: cart.items.map(item => item.course._id.toString()).join(',') // Store course IDs
+                courseIds: checkoutItems.map(item => item.course._id.toString()).join(',') // Store course IDs
             }
         });
 
@@ -60,98 +65,112 @@ exports.createCheckoutSession = async (req, res) => {
 
 // Webhook handler for Stripe events
 exports.handleStripeWebhook = async (req, res) => {
+    console.log('🔔 Webhook received! Raw headers:', req.headers);
+  console.log('Raw body:', req.body.toString()); // Add this line
+
     const sig = req.headers['stripe-signature'];
-    let event;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+  if (!sig || !webhookSecret) {
+    console.error('❌ Webhook signature or secret missing');
+    return res.status(401).send('Unauthorized');
+  }
+
+  let event;
+  
     try {
-        event = stripe.webhooks.constructEvent(
-            req.body,
-            sig,
-            process.env.STRIPE_WEBHOOK_SECRET
-        );
-        console.log('Webhook event received:', event.type);
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
+      console.log('🔔 Webhook received! Type:', event.type);
     } catch (err) {
-        console.error('Webhook signature verification failed:', err);
-        return res.status(400).send(`Webhook Error: ${err.message}`);
+      console.error('❌ Webhook error:', err);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
     }
-
-    // Handle the checkout.session.completed event
+  
     if (event.type === 'checkout.session.completed') {
-        const session = event.data.object;
-        console.log('Checkout session completed:', session.id);
-        try {
-            if (!session.metadata || !session.metadata.studentId || !session.metadata.courseIds) {
-                throw new Error('Missing required metadata in session');
-              }
-        
-            const studentId = session.metadata.studentId;
-            const courseIdsString = session.metadata.courseIds;
-            const courseIds = courseIdsString ? courseIdsString.split(',') : []; // Declare courseIds outside the if block
-            const courseIdsArray = courseIds.split(',');
-            console.log('Student ID from metadata:', studentId);
-            console.log('Course IDs from metadata:', courseIds);
-
-            const student = await Student.findById(studentId);
-            if (!student) {
-                console.error('Student not found:', studentId);
-                return res.status(404).json({ error: 'Student not found' });
-            }
-            console.log('Found student:', student.id);
-
-            // Enroll student in purchased courses
-            for (const courseId of courseIds) {
-                const existingEnrollment = await Enrollment.findOne({ studentId: student._id, courseId });
-                if (!existingEnrollment) {
-                    const newEnrollment = new Enrollment({
-                        studentId,
-                        courseId,
-                        progress: {
-                            lecturesCompleted: [],
-                            quizzesCompleted: [],
-                            assignmentsSubmitted: []
-                        }
-                    });
-                    await newEnrollment.save();
-                    if(!student.enrolledCourses.includes(courseId)){
-                        student.enrolledCourses.push(courseId);
-                    }
-                    enrollmentResults.push({
-                        courseId, 
-                        status: 'enrolled'
-                    });
-                    console.log(`Enrolled student ${student._id} in course ${courseId}`);
-                } else {
-                    enrollmentResults.push({
-                        courseId,
-                        status: 'already_enrolled'
-                      });
-                    console.log(`Student ${student._id} already enrolled in course ${courseId}`);
-                }
-            }
-
-            // Optionally clear the cart after successful checkout
-            const cart = await Cart.findOneAndUpdate({ student: studentId }, {$set: {items: []}}, {new: true});
-            /*if (cart) {
-                cart.items = [];
-                await cart.save();
-                console.log(`Cart cleared for student ${student._id}`);
-            }*/
-           await student.save();
-           console.log('Post-payment processing completed:', {
-            studentId,
-            enrollments: enrollmentResults,
-            cartCleared: !!cart
-          });
-
-            console.log(`Successfully processed payment for student ${student._id}`);
-        } catch (err) {
-            console.error('Error processing payment and enrolling:', err);
-            return res.status(500).json({ error: 'Error processing payment and enrollment' });
+      console.log('💰 Payment succeeded! Session:', event.data.object);
+      const session = event.data.object;
+  
+      // Start MongoDB session for transaction
+      const dbSession = await mongoose.startSession();
+      dbSession.startTransaction();
+  
+      try {
+        // 1. Verify metadata exists
+        if (!session.metadata?.studentId || !session.metadata?.courseIds) {
+          throw new Error('Missing required metadata in session');
         }
+  
+        const { studentId, courseIds } = session.metadata;
+        const courseIdsArray = courseIds.split(',');
+        
+        console.log('Processing enrollment for:', {
+          studentId,
+          courses: courseIdsArray
+        });
+  
+        // 2. Verify student exists
+        const student = await Student.findById(studentId).session(dbSession);
+        if (!student) throw new Error(`Student not found: ${studentId}`);
+  
+        // 3. Process enrollments
+        const enrollmentResults = [];
+        for (const courseId of courseIdsArray) {
+          const exists = await Enrollment.exists({
+            studentId,
+            courseId
+          }).session(dbSession);
+  
+          if (!exists) {
+            await new Enrollment({
+              studentId,
+              courseId,
+              progress: {
+                lecturesCompleted: [],
+                quizzesCompleted: [],
+                assignmentsSubmitted: []
+              }
+            }).save({ session: dbSession });
+  
+            if (!student.enrolledCourses.includes(courseId)) {
+              student.enrolledCourses.push(courseId);
+            }
+            
+            enrollmentResults.push({ courseId, status: 'enrolled' });
+            console.log(`✅ Enrolled student ${studentId} in course ${courseId}`);
+          }
+        }
+  
+        // 4. Clear cart
+        const cart = await Cart.findOneAndUpdate(
+          { student: studentId },
+          { $set: { items: [] } },
+          { new: true, session: dbSession }
+        );
+        console.log('🛒 Cart cleared:', !!cart);
+  
+        // 5. Save student and commit transaction
+        await student.save({ session: dbSession });
+        await dbSession.commitTransaction();
+        
+        console.log('🎉 Successfully processed payment', {
+          studentId,
+          enrollments: enrollmentResults
+        });
+  
+      } catch (err) {
+        await dbSession.abortTransaction();
+        console.error('❌ Transaction failed:', err);
+      } finally {
+        dbSession.endSession();
+      }
     }
-
+  
     res.json({ received: true });
-};
+  };
 
 exports.verifyPayment = async (req, res) => {
     const { sessionId } = req.params;

@@ -8,6 +8,7 @@ const cartSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: 'Student',
             required: true,
+            immutable: true
         },
         items: [
             {
