@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from './Navbar';
-
+import API_BASE_URL from '../utils/apiConfig';
 const parseJwt = (token) => {
   try {
     const base64Payload = token.split('.')[1];
@@ -38,7 +38,7 @@ const LoginForm = () => {
         },
       };
       console.log('Login attempt with: ', {username: formData.username});
-      const response = await axios.post('http://localhost:5000/api/auth/login', {username: formData.username, password: formData.password}, config);
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {username: formData.username, password: formData.password}, config);
       console.log('Full Response: ', {
         status: response.status,
         data: response.data,

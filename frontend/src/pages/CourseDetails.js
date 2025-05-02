@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import axios from 'axios';
 import { getAuthHeader } from '../utils/authService';
+import API_BASE_URL from '../utils/apiConfig';
 const CourseDetails = () => {
     const { courseId } = useParams();
     const navigate = useNavigate();
@@ -18,7 +19,7 @@ const CourseDetails = () => {
     const [cart, setCart] = useState({ items: [] });
     const fetchCourseDetails = async () => {
         try {
-            const response = await axios.get(`http://localhost:5000/api/courses/${courseId}`);
+            const response = await axios.get(`${API_BASE_URL}/api/courses/${courseId}`);
             setCourse(response.data);
 
             if (response.data.lectures) {
@@ -41,7 +42,7 @@ const CourseDetails = () => {
             console.log('Token being sent for cart request:', token);
             if (!token) return;
 
-            const response = await axios.get('http://localhost:5000/api/cart', {
+            const response = await axios.get('${API_BASE_URL}/api/cart', {
                 headers: { 'x-auth-token': token }
             });
 
@@ -70,7 +71,7 @@ const CourseDetails = () => {
             return;
         }
         try {
-            const response = await axios.get('http://localhost:5000/api/cart', { headers });
+            const response = await axios.get(`${API_BASE_URL}/api/cart`, { headers });
             setCart(response.data.cart);
         } catch (error) {
             console.error('Error fetching cart:', error);
@@ -87,7 +88,7 @@ const CourseDetails = () => {
             }
 
             const response = await axios.post(
-                'http://localhost:5000/api/cart/add',
+                `${API_BASE_URL}/api/cart/add`,
                 { courseId },
                 { headers: { 'x-auth-token': token } }
             );
@@ -115,7 +116,7 @@ const CourseDetails = () => {
             }
 
             const response = await axios.post(
-                'http://localhost:5000/api/cart/wishlist',
+                `${API_BASE_URL}/api/cart/wishlist`,
                 { courseId },
                 { headers: { 'x-auth-token': token } }
             );
@@ -160,7 +161,7 @@ const CourseDetails = () => {
                         <div className="mb-6">
                             {course.thumbnail && (
                                 <img
-                                    src={`http://localhost:5000${course.thumbnail.replace(/\\/g, '/')}`} // Adjust path if needed
+                                    src={`${API_BASE_URL}${course.thumbnail.replace(/\\/g, '/')}`} // Adjust path if needed
                                     alt={course.title}
                                     className="w-full rounded-md shadow-md"
                                 />

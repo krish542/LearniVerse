@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-
+import API_BASE_URL from '../utils/apiConfig';
 const DeleteAccountModal = ({ isOpen, onClose }) => {
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
@@ -20,7 +20,7 @@ const DeleteAccountModal = ({ isOpen, onClose }) => {
           data: { password: deletePassword },
         };
         const body = JSON.stringify({ password: deletePassword });
-        await axios.delete('http://localhost:5000/api/student/profile', config);
+        await axios.delete(`${API_BASE_URL}/api/student/profile`, config);
         localStorage.removeItem('token');
         navigate('/login');
       } catch (err) {

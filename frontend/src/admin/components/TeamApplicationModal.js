@@ -1,5 +1,5 @@
 import React from 'react';
-
+import API_BASE_URL from '../../utils/apiConfig';
 const TeamApplicationModal = ({ onClose, teamMember, onApprove, onReject, onRevoke }) => {
     if (!teamMember) return null;
 
@@ -34,7 +34,7 @@ const TeamApplicationModal = ({ onClose, teamMember, onApprove, onReject, onRevo
                 <div className="mt-2">
                     <h3 className="font-semibold">Resume:</h3>
                     {teamMember.resume ? (
-                        <a href={`http://localhost:5000/uploads/teamUploads/${teamMember.resume}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">
+                        <a href={`${API_BASE_URL}/uploads/teamUploads/${teamMember.resume}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">
                             View Resume
                         </a>
                     ) : (

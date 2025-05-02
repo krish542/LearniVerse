@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import CourseCard from './CourseCard';
-
+import API_BASE_URL from '../utils/apiConfig';
 const FeaturedCourses = () => {
   const [courses, setCourses] = useState([]);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/featured-courses')
+    axios.get(`${API_BASE_URL}/api/featured-courses`)
       .then((response) => setCourses(response.data))
       .catch((error) => console.error('Error fetching featured courses:', error));
   }, []);

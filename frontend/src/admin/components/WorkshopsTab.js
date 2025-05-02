@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import axios from 'axios';
-
+import API_BASE_URL from '../../utils/apiConfig';
 const WorkshopsTab = () => {
   const [formData, setFormData] = useState({
     title: '',
@@ -40,7 +40,7 @@ const WorkshopsTab = () => {
   useEffect(() => {
     const fetchTeachers = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/teacher/getAllTeachers');
+        const res = await axios.get(`${API_BASE_URL}/api/teacher/getAllTeachers`);
         const teacherOptions = res.data.map(teacher => ({
           value: teacher._id,
           label: `${teacher.fullName} (${teacher.subjectsCanTeach})`,
@@ -58,8 +58,8 @@ const WorkshopsTab = () => {
       try {
         // Fetch all data in parallel
         const [workshopsRes, teachersRes] = await Promise.all([
-          axios.get('http://localhost:5000/api/workshops/all'),
-          axios.get('http://localhost:5000/api/teacher/getAllTeachers')
+          axios.get(`${API_BASE_URL}/api/workshops/all`),
+          axios.get(`${API_BASE_URL}/api/teacher/getAllTeachers`)
         ]);
     
         // Create a map of teachers for quick lookup
@@ -124,7 +124,7 @@ const WorkshopsTab = () => {
         },
       };
 
-      const res = await axios.post('http://localhost:5000/api/workshops/send-proposal', payload, {
+      const res = await axios.post('${API_BASE_URL}/api/workshops/send-proposal', payload, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
           'Content-Type': 'application/json'
@@ -180,7 +180,7 @@ const WorkshopsTab = () => {
       console.log(key, value);
     }
       const response = await axios.put(
-        `http://localhost:5000/api/workshops/finalize/${workshopId}`,
+        `${API_BASE_URL}/api/workshops/finalize/${workshopId}`,
         formData,
         {
           headers: {
@@ -196,7 +196,7 @@ const WorkshopsTab = () => {
       alert('Workshop finalized successfully!');
       setIsFinalizeModalOpen(false);
       // Refresh workshops data
-      const res = await axios.get('http://localhost:5000/api/workshops/all');
+      const res = await axios.get(`${API_BASE_URL}/api/workshops/all`);
       const updatedWorkshops = res.data.workshops.map(workshop => ({
         ...workshop,
         teacher: teachers.find(t => t.value === workshop.teacherId) || null
@@ -221,7 +221,7 @@ const WorkshopsTab = () => {
     setResending(prev => ({ ...prev, [workshopId]: true }));
     try {
       const res = await axios.post(
-        `http://localhost:5000/api/workshops/resend-email/${workshopId}`,
+        `${API_BASE_URL}/api/workshops/resend-email/${workshopId}`,
         {},
         {
           headers: {
@@ -453,7 +453,7 @@ const WorkshopsTab = () => {
                         {workshop.poster && (
                           <div className="w-10 h-10 flex-shrink-0 border rounded overflow-hidden">
                             <img 
-                              src={`http://localhost:5000${workshop.poster}`} 
+                              src={`${API_BASE_URL}${workshop.poster}`} 
                               alt="Workshop poster"
                               className="w-full h-full object-cover"
                               onError={(e) => {

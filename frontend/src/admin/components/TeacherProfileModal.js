@@ -1,5 +1,5 @@
 import React from 'react';
-
+import API_BASE_URL from '../../utils/apiConfig';
 const TeacherProfileModal = ({ teacher, onClose, onApprove, onReject, onRevoke }) => {
   if (!teacher) return null;
 
@@ -69,7 +69,7 @@ const TeacherProfileModal = ({ teacher, onClose, onApprove, onReject, onRevoke }
             {teacher.degreeCertificates?.length > 0 ? (
               teacher.degreeCertificates.map((file, idx) => (
                 <li key={idx}>
-                  <a href={`http://localhost:5000/uploads/teacherUploads/degreeCertificates/${file}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">
+                  <a href={`${API_BASE_URL}/uploads/teacherUploads/degreeCertificates/${file}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">
                     View Certificate {idx + 1}
                   </a>
                 </li>
@@ -83,7 +83,7 @@ const TeacherProfileModal = ({ teacher, onClose, onApprove, onReject, onRevoke }
         <div className="mt-2">
           <h3 className="font-semibold">ID Proof:</h3>
           {teacher.idProof ? (
-            <img src={`http://localhost:5000/uploads/teacherUploads/idProofs/${teacher.idProof}`} alt="ID Proof" className="max-w-full max-h- rounded mt-2"/>
+            <img src={`${API_BASE_URL}/uploads/teacherUploads/idProofs/${teacher.idProof}`} alt="ID Proof" className="max-w-full max-h- rounded mt-2"/>
           ) : (
             <p>N/A</p>
           )}

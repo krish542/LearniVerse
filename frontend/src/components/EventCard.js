@@ -1,8 +1,8 @@
 import React from 'react';
-
+import API_BASE_URL from '../utils/apiConfig';
 const EventCard = ({ event }) => {
   const { title, type, poster, id } = event;
-  const baseURL = 'http://localhost:5000';
+  const baseURL = `${API_BASE_URL}`;
 
   let posterPath = poster;
 

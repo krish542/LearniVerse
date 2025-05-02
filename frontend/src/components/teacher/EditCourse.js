@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faPen, faTrash, faCheck, faTimes } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
-
+import API_BASE_URL from '../../utils/apiConfig';
 const EditCourse = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
@@ -171,7 +171,7 @@ const EditCourse = () => {
       }
       console.log('making request to:', )
   
-      await axios.put(`http://localhost:5000/api/teacher/courses/${courseId}/lectures/${lectureId}`, formData, {
+      await axios.put(`${API_BASE_URL}/api/teacher/courses/${courseId}/lectures/${lectureId}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${teacherToken}`,
@@ -179,7 +179,7 @@ const EditCourse = () => {
       });
 
       // Refresh lectures after update
-      const response = await axios.get(`http://localhost:5000/api/teacher/courses/${courseId}`, {
+      const response = await axios.get(`${API_BASE_URL}/api/teacher/courses/${courseId}`, {
         headers: { Authorization: `Bearer ${teacherToken}` },
       });
       setLectures(response.data.lectures || []);
@@ -483,12 +483,12 @@ const EditCourse = () => {
                     {lecture.duration && <p className="text-gray-500 text-sm">Duration: {lecture.duration}</p>}
                     <div className="mt-2">
                       <video width="200" controls className="mb-2">
-                        <source src={`http://localhost:5000${lecture.video}`} type="video/mp4" />
+                        <source src={`${API_BASE_URL}${lecture.video}`} type="video/mp4" />
                         Your browser does not support the video tag.
                       </video>
                       {lecture.notes && (
                         <a
-                          href={`http://localhost:5000${lecture.notes}`}
+                          href={`${API_BASE_URL}${lecture.notes}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-500 text-sm underline"

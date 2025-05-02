@@ -3,7 +3,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import CourseCard from '../components/CourseCard';
 import axios from 'axios';
-
+import API_BASE_URL from '../utils/apiConfig';
 const CoursesPage = () => {
   const [courses, setCourses] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -21,7 +21,7 @@ const CoursesPage = () => {
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/courses', {
+      const response = await axios.get(`${API_BASE_URL}/api/courses`, {
         params: {
           category: filters.category,
           price: filters.price,
@@ -42,7 +42,7 @@ const CoursesPage = () => {
   // Fetch categories from the backend
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/categories');
+      const response = await axios.get(`${API_BASE_URL}/api/categories`);
       setCategories(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);

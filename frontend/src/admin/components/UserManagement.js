@@ -7,6 +7,7 @@ import { faBars, faTimes } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
 import TeacherProfileModal from './TeacherProfileModal';
 import TeamApplicationModal from './TeamApplicationModal';
+import API_BASE_URL from '../../utils/apiConfig';
 const UserManagement = () => {
     const [submittedApplications, setSubmittedApplications] = useState([]);
     const [approvedTeachers, setApprovedTeachers] = useState([]);
@@ -24,7 +25,7 @@ const [showTeamModal, setShowTeamModal] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const fetchTeamMembers = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/team/all', {
+            const res = await fetch(`${API_BASE_URL}/api/team/all`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -50,7 +51,7 @@ const [showTeamModal, setShowTeamModal] = useState(false);
 
         const fetchTeacherApplications = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/admin/teacher-applications', {
+                const response = await fetch(`${API_BASE_URL}/api/admin/teacher-applications`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -87,7 +88,7 @@ const handleViewTeacherProfile = (teacher) => {
   
     const handleUpdateStatus = async (id, status) => {
         try {
-            const response = await fetch(`http://localhost:5000/api/admin/teacher-applications/${id}/status`, {
+            const response = await fetch(`${API_BASE_URL}/api/admin/teacher-applications/${id}/status`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -125,7 +126,7 @@ const handleViewTeacherProfile = (teacher) => {
 
             const fetchTeacherApplications = async () => {
                 try {
-                    const response = await fetch('http://localhost:5000/api/admin/teacher-applications', {
+                    const response = await fetch(`${API_BASE_URL}/api/admin/teacher-applications`, {
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
@@ -151,7 +152,7 @@ const handleViewTeacherProfile = (teacher) => {
     };
     const handleTeamStatusUpdate = async (id, status) => {
         try {
-            const response = await fetch(`http://localhost:5000/api/team/status/${id}`, {
+            const response = await fetch(`${API_BASE_URL}/api/team/status/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

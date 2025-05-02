@@ -3,7 +3,7 @@ const Cart = require('../models/Cart');
 const Student = require('../models/Student');
 const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment'); // Import Enrollment model
-
+const mongoose = require('mongoose'); 
 exports.createCheckoutSession = async (req, res) => {
     try {
         const { cartId } = req.body; // Receive totalAmount
@@ -62,115 +62,91 @@ exports.createCheckoutSession = async (req, res) => {
         });
     }
 };
-
-// Webhook handler for Stripe events
 exports.handleStripeWebhook = async (req, res) => {
-    console.log('🔔 Webhook received! Raw headers:', req.headers);
-  console.log('Raw body:', req.body.toString()); // Add this line
+  const sig = req.headers['stripe-signature'];
 
-    const sig = req.headers['stripe-signature'];
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  if (!sig || !webhookSecret) {
-    console.error('❌ Webhook signature or secret missing');
-    return res.status(401).send('Unauthorized');
-  }
-
-  let event;
-  
-    try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        sig,
-        process.env.STRIPE_WEBHOOK_SECRET
+  try {
+      const event = stripe.webhooks.constructEvent(
+          req.body,
+          sig,
+          process.env.STRIPE_WEBHOOK_SECRET
       );
-      console.log('🔔 Webhook received! Type:', event.type);
-    } catch (err) {
-      console.error('❌ Webhook error:', err);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
-  
-    if (event.type === 'checkout.session.completed') {
-      console.log('💰 Payment succeeded! Session:', event.data.object);
-      const session = event.data.object;
-  
-      // Start MongoDB session for transaction
-      const dbSession = await mongoose.startSession();
-      dbSession.startTransaction();
-  
-      try {
-        // 1. Verify metadata exists
-        if (!session.metadata?.studentId || !session.metadata?.courseIds) {
-          throw new Error('Missing required metadata in session');
-        }
-  
-        const { studentId, courseIds } = session.metadata;
-        const courseIdsArray = courseIds.split(',');
-        
-        console.log('Processing enrollment for:', {
-          studentId,
-          courses: courseIdsArray
-        });
-  
-        // 2. Verify student exists
-        const student = await Student.findById(studentId).session(dbSession);
-        if (!student) throw new Error(`Student not found: ${studentId}`);
-  
-        // 3. Process enrollments
-        const enrollmentResults = [];
-        for (const courseId of courseIdsArray) {
-          const exists = await Enrollment.exists({
-            studentId,
-            courseId
-          }).session(dbSession);
-  
-          if (!exists) {
-            await new Enrollment({
-              studentId,
-              courseId,
-              progress: {
-                lecturesCompleted: [],
-                quizzesCompleted: [],
-                assignmentsSubmitted: []
-              }
-            }).save({ session: dbSession });
-  
-            if (!student.enrolledCourses.includes(courseId)) {
-              student.enrolledCourses.push(courseId);
-            }
-            
-            enrollmentResults.push({ courseId, status: 'enrolled' });
-            console.log(`✅ Enrolled student ${studentId} in course ${courseId}`);
-          }
-        }
-  
-        // 4. Clear cart
-        const cart = await Cart.findOneAndUpdate(
-          { student: studentId },
-          { $set: { items: [] } },
-          { new: true, session: dbSession }
-        );
-        console.log('🛒 Cart cleared:', !!cart);
-  
-        // 5. Save student and commit transaction
-        await student.save({ session: dbSession });
-        await dbSession.commitTransaction();
-        
-        console.log('🎉 Successfully processed payment', {
-          studentId,
-          enrollments: enrollmentResults
-        });
-  
-      } catch (err) {
-        await dbSession.abortTransaction();
-        console.error('❌ Transaction failed:', err);
-      } finally {
-        dbSession.endSession();
+      console.log('🔔 Raw Webhook Event:', event);
+      if (event.type !== 'checkout.session.completed') {
+          return res.status(200).json({ received: true });
       }
-    }
-  
-    res.json({ received: true });
-  };
+
+      const session = event.data.object;
+      console.log('🔔 Webhook metadata:', session.metadata);
+
+      // Validate metadata exists and has correct format
+      if (!session.metadata ||
+          typeof session.metadata.studentId !== 'string' ||
+          typeof session.metadata.courseIds !== 'string' ||
+          typeof session.metadata.cartId !== 'string') {
+          console.error('❌ Invalid metadata format:', session.metadata);
+          return res.status(400).json({ error: 'Invalid metadata format' });
+      }
+
+      const { studentId, courseIds, cartId } = session.metadata;
+      const courseIdsArray = courseIds.split(',').filter(Boolean);
+
+      if (!courseIdsArray.length) {
+          console.error('❌ No valid course IDs found');
+          return res.status(400).json({ error: 'No course IDs provided' });
+      }
+
+      // Process in transaction
+      const dbSession = await mongoose.startSession();
+      try {
+          await dbSession.withTransaction(async () => {
+              // 1. Create Enrollments
+              for (const courseId of courseIdsArray) {
+                  console.log(`Processing enrollment for student: ${studentId}, course: ${courseId}`);
+                  const exists = await Enrollment.exists({ studentId, courseId }).session(dbSession);
+                  console.log(`Enrollment exists: ${exists}`);
+                  if (!exists) {
+                      const newEnrollment = new Enrollment({ studentId, courseId });
+                      const savedEnrollment = await newEnrollment.save({ session: dbSession });
+                      console.log('Enrollment saved:', savedEnrollment);
+                      // Optionally update the Student model to include enrolled courses (you have this in your commented-out code)
+                      const updatedStudent = await Student.findByIdAndUpdate(
+                          studentId,
+                          { $addToSet: { enrolledCourses: courseId } },
+                          { session: dbSession, new: true }
+                      );
+                      console.log('Student updated with enrollment:', updatedStudent);
+                  }
+              }
+
+              // 2. Clear the Cart
+              if (cartId) {
+                  console.log('Clearing cart with ID:', cartId);
+                  const updatedCart = await Cart.findByIdAndUpdate(
+                      cartId,
+                      { $set: { items: [] } },
+                      { session: dbSession, new: true }
+                  );
+                  console.log('Cart cleared:', updatedCart);
+              }
+          });
+
+          console.log('✅ Successfully processed enrollment and cleared cart for student:', studentId);
+          return res.status(200).json({ success: true });
+
+      } catch (error) {
+          console.error('❌ Transaction failed:', error);
+          return res.status(500).json({ error: 'Processing failed' });
+      } finally {
+          dbSession.endSession();
+      }
+
+  } catch (err) {
+      console.error('⚠️ Webhook error:', err.message);
+      return res.status(400).json({ error: err.message });
+  }
+};
+
 
 exports.verifyPayment = async (req, res) => {
     const { sessionId } = req.params;
@@ -187,7 +163,7 @@ exports.verifyPayment = async (req, res) => {
         const session = await stripe.checkout.sessions.retrieve(sessionId, {
             expand: ['line_items.data.price.product']
         });
-        console.log('Stripe session retrieved:', session);
+        //console.log('Stripe session retrieved:', session);
 
         if (session.payment_status !== 'paid') {
             console.log('Payment status:', session.payment_status);
@@ -195,8 +171,8 @@ exports.verifyPayment = async (req, res) => {
         }
         console.log('Payment status is PAID.');
 
-        console.log('Session metadata studentId:', session.metadata.studentId);
-        console.log('Request student ID:', req.student.id);
+        //console.log('Session metadata studentId:', session.metadata.studentId);
+        //console.log('Request student ID:', req.student.id);
         if (session.metadata.studentId !== req.student.id) {
             console.error('Unauthorized access: Student ID mismatch.');
             return res.status(403).json({ error: 'Unauthorized access' });

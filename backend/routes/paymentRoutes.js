@@ -4,7 +4,7 @@ const paymentController = require('../controllers/paymentController');
 const authMiddleware = require('../middleware/auth');
 
 // Public webhook endpoint (no auth)
-router.post('/webhook', express.raw({type: 'application/json'}), paymentController.handleStripeWebhook);
+router.post('/webhook', paymentController.handleStripeWebhook);
 
 // Authenticated routes
 router.use(authMiddleware);

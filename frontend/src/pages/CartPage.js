@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import axios from 'axios';
-
+import API_BASE_URL from '../utils/apiConfig';
 const CartPage = () => {
     const navigate = useNavigate();
     const [cartItems, setCartItems] = useState([]);
@@ -30,7 +30,7 @@ const CartPage = () => {
                 return;
             }
 
-            const response = await axios.get('http://localhost:5000/api/cart', {
+            const response = await axios.get(`${API_BASE_URL}/api/cart`, {
                 headers: { 'x-auth-token': token }
             });
 
@@ -59,7 +59,7 @@ const CartPage = () => {
                 return;
             }
 
-            const response = await axios.delete(`http://localhost:5000/api/cart/remove/${courseId}`, {
+            const response = await axios.delete(`${API_BASE_URL}/api/cart/remove/${courseId}`, {
                 headers: { 'x-auth-token': token }
             });
 
@@ -83,7 +83,7 @@ const CartPage = () => {
             }
 
             const response = await axios.post(
-                'http://localhost:5000/api/cart/wishlist',
+                `${API_BASE_URL}/api/cart/wishlist`,
                 { courseId },
                 { headers: { 'x-auth-token': token } }
             );
@@ -112,7 +112,7 @@ const CartPage = () => {
             }
 
             const response = await axios.post(
-                'http://localhost:5000/api/cart/add',
+                `${API_BASE_URL}/api/cart/add`,
                 { courseId },
                 { headers: { 'x-auth-token': token } }
             );
@@ -143,7 +143,7 @@ const CartPage = () => {
             return;
         }
         const checkoutTotal = cartItems.reduce((sum,item)=> sum + item.course.price, 0);
-        axios.post('http://localhost:5000/api/payment/checkout-session', {
+        axios.post(`${API_BASE_URL}/api/payment/checkout-session`, {
             cartId: cartItems[0].cartId
         }, {
             headers: { 'x-auth-token': token }
@@ -175,7 +175,7 @@ const CartPage = () => {
                             <div key={item.course._id} className="bg-gray-800 p-4 rounded-lg flex items-center justify-between">
                                 <div className="flex items-center">
                                     <img
-                                        src={`http://localhost:5000${item.course.thumbnail}`}
+                                        src={`${API_BASE_URL}${item.course.thumbnail}`}
                                         alt={item.course.title}
                                         className="w-20 h-16 object-cover rounded-md mr-4"
                                     />
@@ -225,7 +225,7 @@ const CartPage = () => {
                             <div key={item.course._id} className="bg-gray-800 p-4 rounded-lg flex items-center justify-between">
                                 <div className="flex items-center">
                                     <img
-                                        src={`http://localhost:5000${item.course.thumbnail}`}
+                                        src={`${API_BASE_URL}${item.course.thumbnail}`}
                                         alt={item.course.title}
                                         className="w-20 h-16 object-cover rounded-md mr-4"
                                     />

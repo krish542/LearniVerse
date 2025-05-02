@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import EventCard from '../components/EventCard';
 import axios from 'axios';
-
+import API_BASE_URL from '../utils/apiConfig';
 const EventsPage = () => {
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
@@ -17,7 +17,7 @@ const EventsPage = () => {
     try {
       const { sortBy, page } = filters;
 
-      const response = await axios.get('http://localhost:5000/api/events', {
+      const response = await axios.get(`${API_BASE_URL}/api/events`, {
         params: { sortBy, page, limit: 10 },
       });
 

@@ -4,7 +4,7 @@ import Navbar from '../../components/Navbar';
 import TeacherSidebar from '../../components/teacher/TeacherSidebar';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars } from '@fortawesome/free-solid-svg-icons';
-
+import API_BASE_URL from '../../utils/apiConfig';
 const AddCourse = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -61,7 +61,7 @@ const AddCourse = () => {
     formData.append('price', isMonetized ? parseFloat(price) : 0);
 
     try {
-      const response = await fetch('http://localhost:5000/api/courses/add', {
+      const response = await fetch(`${API_BASE_URL}/api/courses/add`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${teacherToken}`,

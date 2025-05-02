@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import clickableAreas from './clickableAreas';
 import { io } from 'socket.io-client';
 import socket from "../../socket";
-
+import API_BASE_URL from '../../utils/apiConfig';
 export default class GameScene extends Phaser.Scene {
     constructor() {
         super('GameScene');
@@ -84,8 +84,8 @@ export default class GameScene extends Phaser.Scene {
             const userId = localStorage.getItem('userId'); // assuming it's stored after login
 
             if (!token || !userId) throw new Error("Missing token or userId");
-            //const url = `http://${window.location.hostname}:5000/api/student/me`
-            const url = `http://192.168.29.159:5000/api/student/me`;
+            //const url = `${API_BASE_URL}/api/student/me`
+            const url = `${API_BASE_URL}/api/student/me`;
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -123,7 +123,7 @@ export default class GameScene extends Phaser.Scene {
             return;
         }
 
-        this.socket = io('http://192.168.29.159:5000'); // use your LAN IP
+        this.socket = io('http://192.168.29/159:5000'); // use your LAN IP
 
         const userId = localStorage.getItem('userId');
 

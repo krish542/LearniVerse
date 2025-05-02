@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../Navbar';
 import Footer from '../Footer';
 import { Link } from 'react-router-dom';
-
+import API_BASE_URL from '../../utils/apiConfig';
 const TeacherProfile = () => {
   const [teacherData, setTeacherData] = useState(null);
   const [applicationFormData, setApplicationFormData] = useState({
@@ -347,7 +347,7 @@ const TeacherProfile = () => {
         <strong>Degree Certificates:</strong>
         <ul>
           {teacherData.degreeCertificates.map((cert, index) => (
-            <li key={index}><a href={`http://localhost:5000/uploads/teacherUploads/degreeCertificates/${cert}`} target="_blank" rel="noopener noreferrer">{cert}</a></li>
+            <li key={index}><a href={`${API_BASE_URL}/uploads/teacherUploads/degreeCertificates/${cert}`} target="_blank" rel="noopener noreferrer">{cert}</a></li>
           ))}
         </ul>
       </div>
@@ -355,7 +355,7 @@ const TeacherProfile = () => {
       {typeof teacherData?.degreeCertificates === 'string' && teacherData.degreeCertificates && (
       <div>
         <strong>Degree Certificates:</strong>
-        <p><a href={`http://localhost:5000/uploads/teacherUploads/degreeCertificates/${teacherData.degreeCertificates}`} target="_blank" rel="noopener noreferrer">{teacherData.degreeCertificates}</a></p>
+        <p><a href={`${API_BASE_URL}/uploads/teacherUploads/degreeCertificates/${teacherData.degreeCertificates}`} target="_blank" rel="noopener noreferrer">{teacherData.degreeCertificates}</a></p>
       </div>
     )}
       <p><strong>Teaching Experience (Years):</strong> {teacherData?.teachingExperienceYears}</p>

@@ -12,6 +12,7 @@ process.on('unhandledRejection', err => {
 });
 
 const express = require('express');
+require('dotenv').config();
 const app = express();
 const http = require('http');
 const server = http.createServer(app);
@@ -26,6 +27,9 @@ app.use(cors({
   credentials: true,
   allowedHeaders: 'Content-Type, Authorization, x-auth-token',
 }));
+
+const paymentRoutes = require('./routes/paymentRoutes');
+app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.json({extended: false}));
 const path = require('path');
@@ -39,7 +43,6 @@ const courseRoutes = require('./routes/courseRoutes');
 const teamRoutes = require('./routes/teamRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
-const paymentRoutes = require('./routes/paymentRoutes');
 const apiRoutes = require('./routes/api')
 const eventRoutes = require('./routes/eventRoutes');
 const enrollmentRoutes = require('./routes/enrollmentRoutes');
@@ -47,14 +50,16 @@ const cartRoutes = require('./routes/cartRoutes');
 //import liveSessionRoutes from './routes/liveSessionRoutes.js';
 const liveSessionRoutes = require('./routes/liveSessionRoutes');
 const workshopRoutes = require('./routes/workshopRoutes');
+const {initializeDevTools} = require('./controllers/devUtilsControllers');
+initializeDevTools();
 const PORT = process.env.PORT || 5000;
 const storage = multer.memoryStorage(); // Store files in memory (adjust as needed)
 const upload = multer({ storage: storage });
 
 const { Server } = require('socket.io');
-app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+app.use("/api/payment", paymentRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', auth);
 app.use('/api/student', studentRoutes);
 app.use('/api/admin', adminRoutes);
@@ -68,7 +73,6 @@ app.use('/api/workshops', workshopRoutes);
 app.use('/api/team', teamRoutes);
 app.use("/api/report", reportRoutes);
 app.use("/api/feedback", feedbackRoutes);
-app.use("/api/payment", paymentRoutes);
 app.use('/api/live-sessions', liveSessionRoutes);
 app.get('/api/avatar/:userId', (req, res) => {
   const { userId } = req.params;

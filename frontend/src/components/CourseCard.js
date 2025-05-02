@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-
+import API_BASE_URL from '../utils/apiConfig';
 const CourseCard = ({ course }) => {
   return (
     <div className="border p-4 rounded-lg shadow-md">
       <img
-        src={`http://localhost:5000${course.thumbnail}`}
+        src={`${API_BASE_URL}${course.thumbnail}`}
         alt={course.title}
         className="w-full h-40 object-cover rounded-lg mb-4"
       />

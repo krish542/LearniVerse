@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import axios from 'axios';
+import API_BASE_URL from '../utils/apiConfig';
 
 const PaymentSuccessPage = () => {
     const location = useLocation();
@@ -31,22 +32,22 @@ const PaymentSuccessPage = () => {
 
                 // 1. First verify the payment
                 const verificationResponse = await axios.get(
-                    `http://localhost:5000/api/payment/verify/${sessionId}`,
+                    `${API_BASE_URL}/api/payment/verify/${sessionId}`,
                     { headers: { 'x-auth-token': token } }
                 );
 
                 // 2. Confirm payment and process enrollments
                 await axios.post(
-                    `http://localhost:5000/api/payment/confirm`,
+                    `${API_BASE_URL}/api/payment/confirm`,
                     { sessionId },
                     { headers: { 'x-auth-token': token } }
                 );
 
                 // 3. Optionally refresh user data
-                const userResponse = await axios.get(
-                    `http://localhost:5000/api/student/me`,
+                /*const userResponse = await axios.get(
+                    `${API_BASE_URL}/api/student/me`,
                     { headers: { 'x-auth-token': token } }
-                );
+                );*/
 
                 // 4. Update state with verified session
                 setSession(verificationResponse.data);

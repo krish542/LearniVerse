@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import EventCard from './EventCard';
-
+import API_BASE_URL from '../utils/apiConfig';
 const UpcomingEvents = () => {
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/upcoming-events')
+    axios.get(`${API_BASE_URL}/api/upcoming-events`)
       .then((response) => setEvents(response.data))
       .catch((error) => console.error('Error fetching events:', error));
   }, []);

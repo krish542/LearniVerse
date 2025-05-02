@@ -5,7 +5,7 @@ import TeacherSidebar from './TeacherSidebar';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
-
+import API_BASE_URL from '../../utils/apiConfig';
 // Helper: Google Calendar Link Generator
 function generateCalendarURL(title, startDate, endDate, description) {
   const format = (date) => date.toISOString().replace(/-|:|\.\d+/g, '');
@@ -106,7 +106,7 @@ const [workshopFormData, setWorkshopFormData] = useState({
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/live-sessions', {
+      const response = await fetch(`${API_BASE_URL}/api/live-sessions`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -129,7 +129,7 @@ const [workshopFormData, setWorkshopFormData] = useState({
     try {
       const token = localStorage.getItem('teacherToken');
       const response = await axios.put(
-        `http://localhost:5000/api/workshops/accept/${workshopId}`,
+        `${API_BASE_URL}/api/workshops/accept/${workshopId}`,
         {
           suggestedSessions: workshopFormData.suggestedSessions,
           suggestedDates: workshopFormData.suggestedDates,
@@ -165,7 +165,7 @@ const [workshopFormData, setWorkshopFormData] = useState({
   const fetchCourses = async () => {
     try {
       const token = localStorage.getItem('teacherToken');
-      const response = await axios.get('http://localhost:5000/api/teacher/courses', {
+      const response = await axios.get(`${API_BASE_URL}/api/teacher/courses`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -189,7 +189,7 @@ const [workshopFormData, setWorkshopFormData] = useState({
         return;
       }
       console.log('Fetching workshops');
-      const response = await axios.get('http://localhost:5000/api/workshops/my-workshops', {
+      const response = await axios.get(`${API_BASE_URL}/api/workshops/my-workshops`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -224,7 +224,7 @@ const [workshopFormData, setWorkshopFormData] = useState({
     try {
       const token = localStorage.getItem('teacherToken');
       await axios.put(
-        `http://localhost:5000/api/workshops/respond/${workshopId}`,
+        `${API_BASE_URL}/api/workshops/respond/${workshopId}`,
         { response },
         {
           headers: {
